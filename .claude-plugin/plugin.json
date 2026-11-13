@@ -1,0 +1,6 @@
+{
+  "name": "frontend-architecture-skills",
+  "version": "0.1.0",
+  "description": "Frontend architecture skills: ownership, boundaries, placement, and enforcement for React, Next.js, Vue, Nuxt, Svelte, SvelteKit, and Angular.",
+  "license": "MIT"
+}

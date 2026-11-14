@@ -7,12 +7,12 @@
     {
       "name": "default",
       "scannerArgs": [],
-      "expect": { "coverage": "complete", "percent": 100, "errors": 14, "warns": 0, "infos": 3, "rules": { "deep-import": 14, "no-public-entry": 3 }, "errorSourcesAllUnder": "app/" }
+      "expect": { "coverage": "complete", "percent": 100, "errors": 0, "warns": 0, "infos": 8, "rules": { "unguarded-capability": 5, "no-public-entry": 3 } }
     },
     {
-      "name": "composition layer ignored",
-      "scannerArgs": ["--ignore", "app/**"],
-      "expect": { "coverage": "complete", "percent": 100, "errors": 0, "warns": 0, "infos": 3, "rules": { "no-public-entry": 3 } }
+      "name": "explicit entryPolicy root-only (forces the contract this repo does not declare)",
+      "scannerArgs": ["--entry-policy", "root-only"],
+      "expect": { "coverage": "complete", "percent": 100, "errors": 14, "warns": 0, "infos": 3, "rules": { "deep-import": 14, "no-public-entry": 3 }, "errorSourcesAllUnder": "app/" }
     }
   ]
 }

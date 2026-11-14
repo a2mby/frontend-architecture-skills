@@ -22,8 +22,9 @@ export function resolveCommit(ref, cwd) {
 export function scanDelta({ baseRef, root, cwd = process.cwd(), now }) {
   const top = git(["rev-parse", "--show-toplevel"], cwd);
   if (top.status !== 0) throw new Error("not inside a git repository");
-  const repoRoot = fs.realpathSync(top.stdout.trim());
-  const abs = fs.realpathSync(path.resolve(cwd, root));
+  // realpathSync.native expands Windows 8.3 short names (RUNNER~1) that git reports in long form.
+  const repoRoot = fs.realpathSync.native(top.stdout.trim());
+  const abs = fs.realpathSync.native(path.resolve(cwd, root));
   const relRoot = path.relative(repoRoot, abs);
   if (relRoot.startsWith("..")) throw new Error("source root is outside the repository");
   const base = resolveCommit(baseRef, repoRoot);

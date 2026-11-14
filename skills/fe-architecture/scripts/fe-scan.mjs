@@ -28,6 +28,7 @@ const FIXES = {
   "large-file": "Look for a second reason to change and split along it; size alone is not a defect.",
   "vague-bucket": "Find the owner of each rule in the file and move it there.",
   "no-public-entry": "Add one public entry (index) exporting the capability's contract.",
+  "unguarded-capability": "Optional: give the capability one public entry and set entryPolicy so composition-layer imports are enforced too.",
   "escapes-root": "Imports that leave the source root are not checked; use a package entry, or scan the other root too.",
   "exception-expired": "Fix the violation, or renew the exception with a new date and a reason.",
   "stale-baseline": "Run with --write-baseline to drop entries for violations that no longer exist.",
@@ -639,10 +640,19 @@ export function scan(rawOpts) {
   // Pass 2: boundary rules.
   const capEdges = new Map();
   const sharedConsumers = new Map();
+  // A capability that declares no public entry under the default or detected policy has no contract to violate: imports
+  // from the composition layer (outside every capability and outside shared/) are reported as "unguarded", not as
+  // deep imports. Capability-to-capability and shared-to-capability edges are still checked, and an explicitly
+  // configured policy (flag or config) is always enforced as written.
+  const capsWithEntry = new Set(files.filter((f) => isEntry(f)).map(capabilityOf));
+  const unguarded = new Map();
   for (const e of edges) {
     const fromCap = capabilityOf(e.file), toCap = capabilityOf(e.target);
     if (toCap && toCap !== fromCap) {
-      if (!isEntry(e.target)) add("error", "deep-import", `imports ${rel(e.target)} inside capability "${toCap}"; use its public entry`, e.file, { line: e.line, target: rel(e.target) });
+      const compositionLayer = !fromCap && !inShared(e.file);
+      if (!isEntry(e.target) && compositionLayer && !capsWithEntry.has(toCap) && policySource !== "flag" && policySource !== "config") {
+        unguarded.set(toCap, (unguarded.get(toCap) ?? 0) + 1);
+      } else if (!isEntry(e.target)) add("error", "deep-import", `imports ${rel(e.target)} inside capability "${toCap}"; use its public entry`, e.file, { line: e.line, target: rel(e.target) });
       if (fromCap) { const key = `${fromCap}->${toCap}`; capEdges.set(key, (capEdges.get(key) ?? 0) + 1); }
       if (inShared(e.file)) add("error", "shared-imports-capability", `shared code imports capability "${toCap}" (${rel(e.target)}); shared must stay domain-free`, e.file, { line: e.line, target: rel(e.target) });
     }
@@ -651,6 +661,7 @@ export function scan(rawOpts) {
       sharedConsumers.get(e.target).add(fromCap);
     }
   }
+  for (const [cap, n] of unguarded) add("info", "unguarded-capability", `capability "${cap}" declares no public entry, so ${n} import(s) from the composition layer reaching into it are not treated as deep imports. Add an index/public-api entry, or set entryPolicy, to enforce a contract`, null, { target: cap });
   for (const comp of stronglyConnected(files, graph)) {
     const names = comp.map(rel).sort();
     add("error", "import-cycle", `cycle across ${names.length} files: ${names.slice(0, 6).join(" <-> ")}${names.length > 6 ? " ..." : ""}`, names[0], { target: names.join(",").slice(0, 200) });

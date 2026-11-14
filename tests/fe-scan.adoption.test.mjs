@@ -200,3 +200,48 @@ test("Vue shadcn-shaped generated barrel: <script setup> importing '.' forms a c
   const ignored = scan({ root: dir, ignore: ["components/ui/**"] });
   assert.ok(!ignored.findings.some((f) => f.rule === "import-cycle"));
 });
+
+test("no-barrel repo: composition-layer imports into a capability without any public entry are unguarded, not deep-import errors", () => {
+  const dir = write(tmp(), {
+    "tsconfig.json": ALIAS,
+    "src/features/comments/api/get.ts": "export const get = 1;",
+    "src/features/comments/components/list.tsx": "export const List = 1;",
+    "src/app/routes/page.tsx": "import { get } from '@/features/comments/api/get'; import { List } from '@/features/comments/components/list'; export default [get, List];",
+  });
+  const r = scan({ root: path.join(dir, "src") });
+  assert.equal(r.counts.error, 0, JSON.stringify(r.findings));
+  const f = r.findings.find((x) => x.rule === "unguarded-capability");
+  assert.ok(f && f.severity === "info" && /2 import/.test(f.message));
+});
+
+test("no-barrel repo: capability-to-capability deep imports are still errors", () => {
+  const dir = write(tmp(), {
+    "tsconfig.json": ALIAS,
+    "src/features/comments/api/get.ts": "export const get = 1;",
+    "src/features/discussions/view.tsx": "import { get } from '@/features/comments/api/get'; export const V = get;",
+  });
+  const r = scan({ root: path.join(dir, "src") });
+  assert.ok(rules(r).includes("deep-import"), JSON.stringify(r.findings));
+});
+
+test("no-barrel repo: shared importing a capability is still an error, and an explicit entryPolicy is enforced as written", () => {
+  const files = {
+    "tsconfig.json": ALIAS,
+    "src/features/comments/api/get.ts": "export const get = 1;",
+    "src/shared/x.ts": "import { get } from '@/features/comments/api/get'; export const x = get;",
+    "src/app/page.tsx": "import { get } from '@/features/comments/api/get'; export default get;",
+  };
+  const r = scan({ root: path.join(write(tmp(), files), "src") });
+  assert.ok(rules(r).includes("shared-imports-capability"));
+  const strict = scan({ root: path.join(write(tmp(), files), "src"), entryPolicy: "root-only" });
+  assert.equal(strict.findings.filter((f) => f.rule === "deep-import" && f.file === "app/page.tsx").length, 1);
+});
+
+test("a capability WITH an entry still errors on composition-layer deep imports (default policy)", () => {
+  const dir = write(tmp(), {
+    "tsconfig.json": ALIAS,
+    "src/features/cart/index.ts": "export {};", "src/features/cart/internal/p.ts": "export const p = 1;",
+    "src/app/page.tsx": "import { p } from '@/features/cart/internal/p'; export default p;",
+  });
+  assert.ok(rules(scan({ root: path.join(dir, "src") })).includes("deep-import"));
+});

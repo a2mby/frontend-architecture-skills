@@ -19,25 +19,34 @@ It fetches that commit into a fresh empty temp directory (no install, no project
 
 ## Results
 
-**Run 1, defaults** (`fe-scan.mjs apps/react-vite/src`): coverage complete (331 of 331 project-internal imports resolved), **14 errors**, 0 warnings, 3 info.
+**Run 1, defaults** (`fe-scan.mjs apps/react-vite/src`): coverage complete (331 of 331 project-internal imports resolved), **0 errors**, 0 warnings, 8 info: 5 `unguarded-capability` and 3 `no-public-entry`. No cycles, no `shared` importing a capability, no feature-to-feature deep import.
 
-- 14 `deep-import` errors, every one from the route layer (`app/routes/**`) importing a file inside a capability (for example `features/comments/api/get-comments.ts`).
-- 3 `no-public-entry` info items (`comments`, `discussions`, `users` have no `index.*`).
-- No cycles, no `shared` importing a capability.
+**Run 2, forcing the contract** (`--entry-policy root-only`): **14 errors**, all `deep-import`, every one from the route layer (`app/routes/**`) importing a file inside a capability (for example `features/comments/api/get-comments.ts`).
 
-**Run 2, composition layer ignored** (`--ignore 'app/**'`): coverage complete, **0 errors**, 3 info. That shows there is no feature-to-feature deep import: the only boundary-style violations the scanner can see are app-to-feature imports.
+The Next.js app in the same repository (`apps/nextjs-app`) has the same shape and is not separately pinned.
 
-The Next.js app in the same repository (`apps/nextjs-app`) gives 17 errors with the same shape (all from `app/`), which is expected, not separately pinned.
+## Investigation of the 14 findings
 
-## Interpretation and false positives
+The first version of the scanner (0.2.0 before this change) reported the 14 errors by default. Root-cause analysis, one category per finding:
 
-The 14 errors are false positives **relative to this repository's convention**, not defects. This codebase does not give each feature a public entry file; its route layer imports feature files directly, and cross-feature isolation is the rule that matters. The scanner's default model (a capability exposes one public entry) is the wrong model here, which is the point of F-20: the right responses are (a) `--ignore 'app/**'` or `ignore` in `fe-scan.config.json` to check only feature-to-feature edges, as in run 2, or (b) a layered rule in a tool built for that (`eslint-plugin-boundaries`, `dependency-cruiser`). Per the model's own precedence, a healthy existing convention wins over the default; a report that tells this repository to add barrels would be wrong.
+| Candidate cause | Verdict |
+| --- | --- |
+| Scanner defect (wrong resolution, comments, aliases) | No: all 331 imports resolve and each of the 14 edges is a real import of a file inside a capability |
+| Legitimate architectural violation | No by this repository's own convention: its features have no public entry file, and its route layer imports feature files directly. Capability-to-capability imports (the boundary that matters here) number zero |
+| Incorrectly inferred convention | **Yes.** The scanner assumed every capability exposes one public entry. For a capability that declares none, there is no contract for a composition-layer import to violate |
+| Configuration issue | Partly: the repo could set `entryPolicy: declared` with `publicEntries`, but demanding configuration for a repo that never declared an entry was the wrong default |
 
-What the run does demonstrate: path-alias resolution on a Vite project, full coverage reporting, correct attribution of each finding to a source line, and the ignore mechanism.
+Fix: composition-layer imports (files outside every capability and outside `shared/`) into a capability that has no public entry are reported as one `unguarded-capability` info per capability, not as `deep-import` errors, when the entry policy is the default or detected. Imports between capabilities, `shared` importing a capability, and any explicitly configured policy are unchanged (regression tests: no-barrel repo, `app/` to feature file passes; feature A to feature B internals still errors; shared still errors; a capability that does have an entry still errors; the 83-import legacy-app ratchet is unchanged).
+
+No ignore was added to reach 0.
+
+## Interpretation
+
+What the run demonstrates: alias resolution on a Vite project, full coverage reporting, correct attribution of findings, and that a repo with a different, coherent convention (direction-restricted, no barrels) is not condemned by default. The scanner does **not** check this repository's actual rule (features must not import from other features, enforced there by lint). For layer and direction rules use `eslint-plugin-boundaries`, Steiger, Nx tags or `dependency-cruiser`.
 
 ## Known limitations of this validation
 
 - One repository, one commit; it shows the scanner behaves sensibly on a well-structured public app, not that it is correct in general.
 - Only the scanner was evaluated, not agent behavior on this repository.
-- The `no-public-entry` info is noise for repositories that deliberately have no barrels.
+- The `no-public-entry` and `unguarded-capability` infos are advisory for repositories that deliberately have no barrels.
 - Earlier private-codebase runs (four anonymized apps: Next.js with 83 deep imports and no boundary rules; Next.js with a capability cycle; Laravel + Inertia + Vue with shadcn-style generated cycles and Wayfinder-generated unresolved imports; a small Next.js app) motivated the baseline, ignore, and coverage features. They are contextual evidence only and cannot be reproduced from this repository; `tests/` contains synthetic equivalents of each shape.

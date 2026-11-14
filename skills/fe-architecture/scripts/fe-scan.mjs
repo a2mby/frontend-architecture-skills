@@ -561,15 +561,21 @@ export function scan(rawOpts) {
 
   const featuresDir = detectFeaturesDir(root, featuresOpt);
   const sharedDir = path.join(root, sharedOpt);
-  const rel = (f) => path.relative(root, f).split(path.sep).join("/");
+  const relCache = new Map();
+  const rel = (f) => { let r = relCache.get(f); if (r === undefined) { r = path.relative(root, f).split(path.sep).join("/"); relCache.set(f, r); } return r; };
   const ignoreRes = [...(config.ignore ?? []), ...(opts.ignore ?? [])].map(globToRegExp);
   const isIgnored = (file) => ignoreRes.some((re) => re.test(rel(file)));
 
+  const capCache = new Map();
   const capabilityOf = (file) => {
     if (!featuresDir) return null;
-    const r = path.relative(featuresDir, file);
-    if (r.startsWith("..") || path.isAbsolute(r)) return null;
-    return r.split(path.sep)[0];
+    let c = capCache.get(file);
+    if (c === undefined) {
+      const r = path.relative(featuresDir, file);
+      c = r.startsWith("..") || path.isAbsolute(r) ? null : r.split(path.sep)[0];
+      capCache.set(file, c);
+    }
+    return c;
   };
   const inShared = (file) => !path.relative(sharedDir, file).startsWith("..");
 
@@ -679,8 +685,10 @@ export function scan(rawOpts) {
   for (const [cap, n] of fanOut) if (n >= 3) add("warn", "high-fan-out", `capability "${cap}" imports ${n} other capabilities; coordination may belong in the composition layer`, null, { target: cap });
   for (const [file, caps] of sharedConsumers) if (caps.size === 1) add("info", "single-consumer-shared", `used only by capability "${[...caps][0]}"; ladder rung 2-3 says it belongs inside that capability`, file);
   if (featuresDir && isDir(featuresDir)) {
+    const byCap = new Map();
+    for (const f of files) { const c = capabilityOf(f); if (c) { if (!byCap.has(c)) byCap.set(c, []); byCap.get(c).push(f); } }
     for (const cap of fs.readdirSync(featuresDir, { withFileTypes: true }).filter((e) => e.isDirectory())) {
-      const capFiles = files.filter((f) => capabilityOf(f) === cap.name);
+      const capFiles = byCap.get(cap.name) ?? [];
       if (!capFiles.some(isEntry) && capFiles.length > 5) add("info", "no-public-entry", `capability "${cap.name}" has ${capFiles.length} files and no index/public-api entry`, null, { target: cap.name });
     }
   }

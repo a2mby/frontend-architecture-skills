@@ -1,0 +1,735 @@
+{
+  "started": "2026-11-13T22:19:01.491Z",
+  "model": "sonnet",
+  "cliVersion": "2.1.323 (Claude Code)",
+  "isolation": "fresh temp copy of the fixture per trial; skills installed project-locally; user-level settings, CLAUDE.md and plugins of the host were NOT isolated",
+  "results": [
+    {
+      "case": "classify-tie-break",
+      "skill": "fe-architecture",
+      "scenario": "existing",
+      "kind": "advisory",
+      "trial": 1,
+      "model": "sonnet",
+      "cliVersion": "2.1.323 (Claude Code)",
+      "date": "2026-11-13T22:19:19.329Z",
+      "seconds": 18,
+      "cost": 0.140078,
+      "turns": 5,
+      "agentError": false,
+      "skillsSeen": [
+        "fe-architecture"
+      ],
+      "checks": [
+        {
+          "type": "no-files-changed",
+          "pass": true,
+          "detail": ""
+        },
+        {
+          "type": "output-matches",
+          "pass": true,
+          "detail": "Moderate"
+        },
+        {
+          "type": "output-matches",
+          "pass": true,
+          "detail": "tripwire|promote to Complex"
+        },
+        {
+          "type": "output-not-matches",
+          "pass": true,
+          "detail": "Module Map\\s*\\n\\s*(\\||#|-)"
+        },
+        {
+          "type": "output-matches",
+          "pass": true,
+          "detail": "not run: advisory"
+        }
+      ],
+      "passed": 5,
+      "total": 5,
+      "changed": {
+        "added": [],
+        "removed": [],
+        "modified": []
+      },
+      "finalText": "**Level: Moderate.** The settings area has 3 workflows (profile, notifications, billing). It has server data (one API) plus a local draft, which is a Moderate signal. It has no second firm Complex signal: no second integration, no reported regressions, and no sub-areas shown to change independently. This matches the skill's own \"settings area, 3 tabs sharing one saved form, one API\" case. Tripwire: promote to Complex if billing gains its own integration, such as a payment SDK, or if the tabs start changing independently.\n\n**Owner:** a new capability, so there is no existing owner. `src/features/` is the convention in this repo (`cart`, `checkout`, `search`), and it has no `settings` capability yet.\n\n**Placement:**\n- `src/features/settings/index.ts` (proposed): the one public entry. It exports the settings screen and its types, and nothing else.\n- `src/features/settings/settings.api.ts` (proposed): the single API owner. It holds the read and save calls and the query key, following `src/features/cart/cart.api.ts`. All three tabs go through this and never call the API directly.\n- `src/features/settings/model.ts` (proposed): the settings types, the draft/commit/reset logic, and validation. It follows `src/features/cart/model.ts`.\n- `src/features/settings/components/` (proposed): `SettingsForm` owns the one shared draft and the single Save action. `ProfileTab.tsx`, `NotificationsTab.tsx` and `BillingTab.tsx` are presentational field groups that receive the draft by props or context.\n- `src/app/settings/page.tsx` (proposed): a thin route that composes the feature's public entry. `src/app/` is empty today, so this follows Next's own layout. Wiring belongs at the app level.\n- `src/shared/`: nothing goes here. Only `src/shared/ui/CartBadge.tsx` exists, and there is no second unrelated consumer for anything in settings.\n\n**State owners:**\n- Saved settings: the server, cached through the API module.\n- Draft: local state in `SettingsForm`, with explicit reset and commit. It is not a second authority.\n- Active tab: the URL (`?tab=`), so tabs can be linked and survive a reload.\n\n**Edge note** (new read and save edge):\n- **Operation:** a read and a single save, with the contract defined in `settings.api.ts`.\n- **Freshness:** invalidate the cache after a successful save.\n- **Consistency:** wait for the server before committing the draft.\n- **Failure:** handle loading, error and retry states.\n- **Duplicate writes:** disable Save while a save is in flight.\n\n**Tradeoff note:** one form and one API means a single Save with no cross-tab drift. The cost is that all three tabs share one draft, so a billing change can block saving a profile edit. This is wrong if billing needs its own endpoint or payment flow, which is the tripwire above. Misuse breaks the single owner if a tab fetches or saves on its own.\n\n**Boundary:** other code imports only `features/settings`. I did not check whether an import rule or cycle check exists in this repo, so enforcement is a named gap. Run the scanner once the feature exists.\n\n**Verified:** not run: advisory task. I opened only the file listing and `package.json`. I did not open the existing feature files, so the `cart` conventions above are inferred from file names.",
+      "workdir": "<tmp>"
+    },
+    {
+      "case": "check-structure-seeded",
+      "skill": "fe-check-structure",
+      "scenario": "legacy",
+      "kind": "readonly",
+      "trial": 1,
+      "model": "sonnet",
+      "cliVersion": "2.1.323 (Claude Code)",
+      "date": "2026-11-13T22:19:42.402Z",
+      "seconds": 23,
+      "cost": 0.1681282,
+      "turns": 7,
+      "agentError": false,
+      "skillsSeen": [
+        "fe-architecture"
+      ],
+      "checks": [
+        {
+          "type": "skill-used",
+          "pass": false,
+          "detail": "skills seen: fe-architecture"
+        },
+        {
+          "type": "no-files-changed",
+          "pass": true,
+          "detail": ""
+        },
+        {
+          "type": "output-matches",
+          "pass": true,
+          "detail": "cycle"
+        },
+        {
+          "type": "output-matches",
+          "pass": true,
+          "detail": "internal/price"
+        },
+        {
+          "type": "output-matches",
+          "pass": true,
+          "detail": "CartBadge"
+        },
+        {
+          "type": "output-matches",
+          "pass": true,
+          "detail": "coverage"
+        }
+      ],
+      "passed": 5,
+      "total": 6,
+      "changed": {
+        "added": [],
+        "removed": [],
+        "modified": []
+      },
+      "finalText": "## Structure check: react-seeded (src)\n\nNo profile (`docs/frontend-architecture.md`), `AGENTS.md` or decision register exists. Facts are `assumed` from the repo itself:\n- **Source root:** `src` (verified).\n- **Framework:** Next 16 and React 19, from `package.json` (verified). There is no `app/` directory.\n- **Capabilities directory:** `src/features` (verified).\n\n**Capabilities:**\n- **cart: Moderate (assumed).** Evidence: one data owner (`cart.api.ts`) and a public entry (`index.ts`). The only workflow visible is add-item. I have no history to cite for a higher level.\n- **checkout: Simple (assumed).** It is one 2-line file with no state.\n- **search: Simple (assumed).** It is one 2-line file with no state.\n\n**Scan:** 3 errors / 0 warnings / 0 info, baselined: 0. Coverage: complete, with 7 of 7 internal imports resolved. I ran it with `--all`, and the output was identical.\n\n**Pass (within the checked scope; the scan was complete):**\n- Every import resolved, so there are no unresolved prefixes.\n- `search` reaches `cart` and `checkout` through their public entries only (`src/features/search/index.ts:1-2`).\n- No violations other than the three below.\n\n**Fail (ranked):**\n1. **Import cycle in cart** | evidence: `features/cart/model.ts:1` imports `price` from `./internal/price`, and `features/cart/internal/price.ts:1` imports `total` from `../model`. I opened both files. The cycle is real, and it is mutual recursion: `total(n)` calls `price(n-1)`, which calls `total(n-1)` and multiplies by 1.2. | smallest repair: put the shared pricing rule in one leaf module (for example `internal/pricing.ts`) that has no back-import, and have `model.ts` and `price.ts` both depend on it. Alternatively, invert one edge by passing `total` into `price` as an argument. | cost / not-when: it touches only cart-private files, so cost is low. If the recursion is itself the intended domain rule, merge the two files into one rather than splitting them.\n2. **Cross-capability deep import** | evidence: `features/checkout/index.ts:1` imports `@/features/cart/internal/price`, which is private to cart and not exported from `cart/index.ts`. I confirmed the `@/*` → `src/*` alias in `tsconfig.json`. | smallest repair: export a pricing function from `cart/index.ts` and import it in checkout through the entry (`@/features/cart`). | cost / not-when: this widens cart's public contract by one function. Moving `price` into `shared/` would be the wrong fix, because it is domain code. Note that after this, `search → checkout → cart` and `search → cart` are the only edges, and both are acyclic.\n3. **Shared code imports a capability** | evidence: `shared/ui/CartBadge.tsx:1` imports `addItem` from `@/features/cart`. | smallest repair: move `CartBadge` into `features/cart/` and export it from the cart entry. Alternatively, keep it in `shared/ui` and pass the behavior in as a prop. | cost / not-when: the move is cheap. Keep it in `shared/` only if a second, unrelated capability needs it and it takes props. Separately, the component calls a network mutation during render (`addItem(\"x\")` with a hardcoded id and no event handler). That is probably a seeded stub, so I'm flagging it as a hypothesis and haven't confirmed it.\n\n**Manual items:**\n- **Public entries mixing client and server exports:** none found. The entries re-export small functions, and the repo has no server or client markers.\n- **State copied between server data, store, and URL:** none found. There is no store, and no state at all.\n- **Domain rules duplicated in two places:** checkout's `price(n)` and cart's `total(n)` are the same pricing recursion, which is the cycle above. The 1.2 multiplier lives in one place only (`price.ts`).\n- **Edge notes missing for network reads and mutations:** `cart.api.ts:1` posts to `/api/cart/${id}` with no edge note. It has no loading or error handling, no idempotency guard, and no check of `res.ok`. `search/index.ts:1` calls `addItem(id)` without awaiting it, so it discards the promise and any failure. It then returns the checkout total regardless of whether the add succeeded.\n- **Components importing 3+ capabilities:** none. There is one component, and it imports one capability.\n- **Existing enforcement:** none. There is no ESLint config, no CI step, and no dependency-cruiser. `package.json` has only the stub scripts `lint: echo lint` and `typecheck: echo tsc`. All three findings are currently unblocked.\n\n**Not checked:**\n- The scanner's list: only static imports, re-exports, and literal `import()` / `require()` are read. Framework template references and runtime-computed paths are not.\n- Runtime behavior, the real `/api/cart` contract, and test coverage. There are no tests, and the repo has no `app/` routes to inspect.\n- Size and naming smells: the repo is too small for any to fire.\n- I did not run a typecheck or build, because the scripts are stubs.\n\nNext: `fe-restructure` src/features/cart (the cycle and the deep import) | `fe-enforce` (no boundary rules exist yet) | `fe-init-profile` (no profile exists)",
+      "workdir": "<tmp>"
+    },
+    {
+      "case": "vue-portability",
+      "skill": "fe-architecture",
+      "scenario": "existing",
+      "kind": "advisory",
+      "trial": 1,
+      "model": "sonnet",
+      "cliVersion": "2.1.323 (Claude Code)",
+      "date": "2026-11-13T22:19:59.082Z",
+      "seconds": 17,
+      "cost": 0.1493348,
+      "turns": 8,
+      "agentError": false,
+      "skillsSeen": [
+        "fe-architecture"
+      ],
+      "checks": [
+        {
+          "type": "no-files-changed",
+          "pass": true,
+          "detail": ""
+        },
+        {
+          "type": "output-not-matches",
+          "pass": true,
+          "detail": "useState|useEffect"
+        },
+        {
+          "type": "output-matches",
+          "pass": true,
+          "detail": "query|URL"
+        },
+        {
+          "type": "output-matches",
+          "pass": true,
+          "detail": "draft"
+        }
+      ],
+      "passed": 4,
+      "total": 4,
+      "changed": {
+        "added": [],
+        "removed": [],
+        "modified": []
+      },
+      "finalText": "**Owner:** the existing `orders` capability. It's a Vue 3 app with `pinia` and `vue-router`, and no profile or decision register exists, so those facts are `assumed`. I opened `src/features/orders/index.ts` and `OrdersList.vue`. I found no real consumer and no data path: `OrdersList.vue` holds an empty local `ref<string[]>([])`.\n\n**Level:** Moderate. Server data plus local UI state, one read workflow. The only evidence is the two-field filter and the reload requirement. Tripwire: promote to Complex when a second firm signal appears, such as a second integration or saved filter presets that other sub-areas share.\n\n**Placement** (all `(proposed)` unless noted):\n- `src/features/orders/OrderFilters.vue` (proposed). It is the filter panel. It owns the **draft** (status and date range in progress) and has explicit apply and reset actions.\n- `src/features/orders/useOrderFilters.ts` (proposed). This composable is the single owner of **committed** filters. It reads and writes `vue-router` query params, such as `?status=…&from=…&to=…`. It parses and validates them into a typed object, ignores bad values, and exposes the committed filters and `apply(draft)` and `reset()`.\n- `OrdersList.vue` (existing). It consumes `useOrderFilters()` and passes the committed filters to the orders data owner. The filtered list is derived from that call or the server query, not copied into a second ref.\n- `index.ts` (existing). It exports `OrderFilters`, and exports the `OrderFilters` type only if another capability needs it.\n- No Pinia store and no `shared/`. There is no second consumer, so nothing gets promoted.\n\n**State ownership:**\n| Datum | Owner |\n|---|---|\n| Committed filters | URL query. This is what survives reload, and it is also shareable and back-button friendly. |\n| Draft filters | Local state in `OrderFilters.vue` |\n| Orders data | Server. The data owner's cache key must include the committed filters. |\n| Filtered view | Derived, not stored |\n\n**Rejected alternatives:**\n- Pinia: it's lost on reload unless you add persistence, and it creates a second authority.\n- localStorage: it hides state from the URL and goes stale across tabs. Revisit it only if \"remember my last filters\" becomes a requirement.\n\n**Tradeoff note:** URL-owned filters solve reload survival and shareability. The cost is parsing and validating params, and navigation entries when filters change. Use `router.replace` for apply if you don't want every apply in history. They are the wrong choice if filters must persist across sessions without a link. A missing or invalid validation step breaks the page on a hand-edited URL.\n\n**Edge note:** the list needs a read operation with `status`, `from` and `to` params.\n- **Owner and key:** the orders data owner, keyed on all three filters. Today there is none, so this is a gap. Use the query library if one is installed. Otherwise use a composable local to `orders`.\n- **Freshness:** refetch on a filter change.\n- **Failure behavior:** handle loading, empty, and error states. Guard against an out-of-order response overwriting a newer one.\n- **Invalid range:** clamp it or show an error when `from` is after `to`.\n- **Mutation:** none.\n\n**Enforcement gap:** there is no boundary rule or cycle check in the repo. Adding `eslint-plugin-boundaries` or `dependency-cruiser` over `.vue` and `.ts` is worth doing when the second capability arrives, not before.\n\n**Verified:** not run: advisory task. No files changed. I did not run the scanner, and `src/features/orders` has no tests or consumers to inspect.",
+      "workdir": "<tmp>"
+    },
+    {
+      "case": "greenfield-new-capability",
+      "skill": "fe-apply-feature",
+      "scenario": "greenfield",
+      "kind": "advisory",
+      "trial": 1,
+      "model": "sonnet",
+      "cliVersion": "2.1.323 (Claude Code)",
+      "date": "2026-11-13T22:20:15.189Z",
+      "seconds": 16,
+      "cost": 0.1475968,
+      "turns": 7,
+      "agentError": false,
+      "skillsSeen": [
+        "fe-architecture"
+      ],
+      "checks": [
+        {
+          "type": "skill-used",
+          "pass": false,
+          "detail": "skills seen: fe-architecture"
+        },
+        {
+          "type": "no-files-changed",
+          "pass": true,
+          "detail": ""
+        },
+        {
+          "type": "no-invented-paths",
+          "pass": true,
+          "detail": "every non-existent path is labeled proposed/new"
+        },
+        {
+          "type": "output-matches",
+          "pass": true,
+          "detail": "proposed"
+        },
+        {
+          "type": "output-not-matches",
+          "pass": true,
+          "detail": "features/(products|product-list)/(components|hooks|api|model|types)/[\\w.-]+/[\\w.-]+/"
+        }
+      ],
+      "passed": 4,
+      "total": 5,
+      "changed": {
+        "added": [],
+        "removed": [],
+        "modified": []
+      },
+      "finalText": "**Locate**\n- Mode: **new app, no existing code**. The project is a Vite 6 + React 19 + TypeScript SPA (`package.json`, verified). There is no profile (`docs/frontend-architecture.md`), no `AGENTS.md`, no decision register, and no router, data library, test runner or styling system. `src/App.tsx` is only `<h1>Hello</h1>`. `src/main.tsx` mounts `<App />`, and nothing else consumes it yet.\n- Source root: `src` (verified, since it already holds `main.tsx` and `App.tsx`). Framework-owned/composition files: `index.html` (proposed, not in the file list), `src/main.tsx`, `src/App.tsx`. These are rung 5.\n- First owner: `src/ProductsList.tsx` (proposed). The one existing file that will consume it is `src/App.tsx`, which I opened.\n\n**Classify: Simple.** The evidence is one read workflow (load, view, filter), local state, and about 3 files. The feature adds no Complex-row signal and no second integration. No signal justifies Moderate: there is no reuse in 2+ routes, and the server data is read once and filtered locally. Tripwire: promote to Moderate (`src/features/products/` with one public entry) when pagination, server-side search, a detail view, or a second route reuses it.\n\n**Contract (new network edge).** Nothing in the repo defines `GET /api/products`, so the response shape is `proposed`. Plan: `type Product = { id: string; name: string; price?: number }` (proposed), validated or at least typed at the fetch boundary. Mock it with a Vite dev middleware or a static `public/api/products` JSON until the real contract is confirmed.\n\n**Edge note (read, `GET /api/products`)**\n- Owner and key: `ProductsList` owns the fetched list as local state. There is no cache, so no key.\n- Freshness: fetch on mount, no invalidation. Re-fetch only through a retry button.\n- Consistency: read only, no mutation, so no duplicate-write guard.\n- Failure: show loading, empty, and error states. Check `res.ok`, and abort the request with `AbortController` on unmount.\n\n**Placement (Ownership Ladder)**\n- `src/ProductsList.tsx` (proposed): the table, the filter input, and the loading/error/empty rendering. Rung 1, colocated beside its consumer.\n- `src/useProducts.ts` (proposed): the fetch and `Product` type, only if you want to keep the data path out of the component. Rung 1. Otherwise keep it inside `ProductsList.tsx`.\n- `src/App.tsx` (existing): renders `<ProductsList />`. Rung 5.\n- State ownership:\n  - The product list belongs to the server and is held in the component's local state.\n  - The filter text is local `useState`.\n  - The filtered rows are derived with `products.filter(...)`, not stored.\n- Not created: no `features/`, no `shared/`, no barrel, no state library, no router.\n- Tradeoff note: flat colocation solves low ceremony. It costs a move once a second consumer appears. It is not right if the list is reused across routes. Misusing it breaks nothing but import paths.\n\n**Verified:** `not run: advisory task`. No file was created or edited.\n\n**Risks / follow-ups**\n- `package.json` has an `eslint .` script but no `eslint` dependency or config, so lint is currently unavailable.\n- There is no test runner. Add one (Vitest plus Testing Library) when implementing, to cover filtering and the loading/error states.\n- There is no `index.html` yet, so `vite` and the build cannot run.\n- Add a profile via `fe-init-profile` and a boundary rule via `fe-enforce` when a second capability appears.",
+      "workdir": "<tmp>"
+    },
+    {
+      "case": "greenfield-new-capability",
+      "skill": "fe-apply-feature",
+      "scenario": "greenfield",
+      "kind": "advisory",
+      "trial": 2,
+      "model": "sonnet",
+      "cliVersion": "2.1.323 (Claude Code)",
+      "date": "2026-11-13T22:20:21.355Z",
+      "seconds": 6,
+      "cost": 0.0972442,
+      "turns": 4,
+      "agentError": true,
+      "skillsSeen": [
+        "fe-architecture"
+      ],
+      "checks": [
+        {
+          "type": "skill-used",
+          "pass": false,
+          "detail": "skills seen: fe-architecture"
+        },
+        {
+          "type": "no-files-changed",
+          "pass": true,
+          "detail": ""
+        },
+        {
+          "type": "no-invented-paths",
+          "pass": true,
+          "detail": "every non-existent path is labeled proposed/new"
+        },
+        {
+          "type": "output-matches",
+          "pass": false,
+          "detail": "proposed"
+        },
+        {
+          "type": "output-not-matches",
+          "pass": true,
+          "detail": "features/(products|product-list)/(components|hooks|api|model|types)/[\\w.-]+/[\\w.-]+/"
+        }
+      ],
+      "passed": 3,
+      "total": 5,
+      "changed": {
+        "added": [],
+        "removed": [],
+        "modified": []
+      },
+      "finalText": "You've hit your 5-hour limit · resets 3:50am (local time)",
+      "workdir": "<tmp>"
+    },
+    {
+      "case": "greenfield-new-capability",
+      "skill": "fe-apply-feature",
+      "scenario": "greenfield",
+      "kind": "advisory",
+      "trial": 3,
+      "model": "sonnet",
+      "cliVersion": "2.1.323 (Claude Code)",
+      "date": "2026-11-13T22:20:27.456Z",
+      "seconds": 6,
+      "cost": 0.0969062,
+      "turns": 4,
+      "agentError": true,
+      "skillsSeen": [
+        "fe-architecture"
+      ],
+      "checks": [
+        {
+          "type": "skill-used",
+          "pass": false,
+          "detail": "skills seen: fe-architecture"
+        },
+        {
+          "type": "no-files-changed",
+          "pass": true,
+          "detail": ""
+        },
+        {
+          "type": "no-invented-paths",
+          "pass": true,
+          "detail": "every non-existent path is labeled proposed/new"
+        },
+        {
+          "type": "output-matches",
+          "pass": false,
+          "detail": "proposed"
+        },
+        {
+          "type": "output-not-matches",
+          "pass": true,
+          "detail": "features/(products|product-list)/(components|hooks|api|model|types)/[\\w.-]+/[\\w.-]+/"
+        }
+      ],
+      "passed": 3,
+      "total": 5,
+      "changed": {
+        "added": [],
+        "removed": [],
+        "modified": []
+      },
+      "finalText": "You've hit your 5-hour limit · resets 3:50am (local time)",
+      "workdir": "<tmp>"
+    },
+    {
+      "case": "apply-feature-simple",
+      "skill": "fe-apply-feature",
+      "scenario": "existing",
+      "kind": "mutating",
+      "trial": 1,
+      "model": "sonnet",
+      "cliVersion": "2.1.323 (Claude Code)",
+      "date": "2026-11-13T22:20:30.640Z",
+      "seconds": 3,
+      "cost": 0,
+      "turns": 1,
+      "agentError": true,
+      "skillsSeen": [],
+      "checks": [
+        {
+          "type": "skill-used",
+          "pass": false,
+          "detail": "skills seen: none"
+        },
+        {
+          "type": "changes-within",
+          "pass": true,
+          "detail": ""
+        },
+        {
+          "type": "no-new-files-matching",
+          "pass": true,
+          "detail": ""
+        },
+        {
+          "type": "scan-errors-not-higher",
+          "pass": true,
+          "detail": "before 3, after 3"
+        },
+        {
+          "type": "output-matches",
+          "pass": false,
+          "detail": "Owner"
+        },
+        {
+          "type": "new-file-count-at-most",
+          "pass": true,
+          "detail": "0 new files"
+        }
+      ],
+      "passed": 4,
+      "total": 6,
+      "changed": {
+        "added": [],
+        "removed": [],
+        "modified": []
+      },
+      "finalText": "You've hit your 5-hour limit · resets 3:50am (local time)",
+      "workdir": "<tmp>"
+    },
+    {
+      "case": "restructure-deep-import",
+      "skill": "fe-restructure",
+      "scenario": "legacy",
+      "kind": "mutating",
+      "trial": 1,
+      "model": "sonnet",
+      "cliVersion": "2.1.323 (Claude Code)",
+      "date": "2026-11-13T22:20:33.822Z",
+      "seconds": 3,
+      "cost": 0,
+      "turns": 1,
+      "agentError": true,
+      "skillsSeen": [],
+      "checks": [
+        {
+          "type": "skill-used",
+          "pass": false,
+          "detail": "skills seen: none"
+        },
+        {
+          "type": "changes-within",
+          "pass": true,
+          "detail": ""
+        },
+        {
+          "type": "scan-errors-not-higher",
+          "pass": true,
+          "detail": "before 3, after 3"
+        },
+        {
+          "type": "scan-rule-max",
+          "pass": false,
+          "detail": "deep-import in features/checkout/: 1"
+        }
+      ],
+      "passed": 2,
+      "total": 4,
+      "changed": {
+        "added": [],
+        "removed": [],
+        "modified": []
+      },
+      "finalText": "You've hit your 5-hour limit · resets 3:50am (local time)",
+      "workdir": "<tmp>"
+    },
+    {
+      "case": "enforce-negative-test",
+      "skill": "fe-enforce",
+      "scenario": "legacy",
+      "kind": "mutating",
+      "trial": 1,
+      "model": "sonnet",
+      "cliVersion": "2.1.323 (Claude Code)",
+      "date": "2026-11-13T22:20:37.384Z",
+      "seconds": 4,
+      "cost": 0,
+      "turns": 1,
+      "agentError": true,
+      "skillsSeen": [],
+      "checks": [
+        {
+          "type": "skill-used",
+          "pass": false,
+          "detail": "skills seen: none"
+        },
+        {
+          "type": "npm-script-gate",
+          "pass": false,
+          "detail": "clean exit 1, with injected violation exit 1"
+        },
+        {
+          "type": "file-exists",
+          "pass": false,
+          "detail": "fe-scan.baseline.json"
+        }
+      ],
+      "passed": 0,
+      "total": 3,
+      "changed": {
+        "added": [],
+        "removed": [],
+        "modified": []
+      },
+      "finalText": "You've hit your 5-hour limit · resets 3:50am (local time)",
+      "workdir": "<tmp>"
+    },
+    {
+      "case": "review-branch-readonly",
+      "skill": "fe-review",
+      "scenario": "existing",
+      "kind": "readonly",
+      "trial": 1,
+      "model": "sonnet",
+      "cliVersion": "2.1.323 (Claude Code)",
+      "date": "2026-11-13T22:20:40.553Z",
+      "seconds": 3,
+      "cost": 0,
+      "turns": 1,
+      "agentError": true,
+      "skillsSeen": [],
+      "checks": [
+        {
+          "type": "skill-used",
+          "pass": false,
+          "detail": "skills seen: none"
+        },
+        {
+          "type": "git-unchanged",
+          "pass": true,
+          "detail": "status=\"\" branch=feature worktrees=1 stash=\"\""
+        },
+        {
+          "type": "no-files-changed",
+          "pass": true,
+          "detail": ""
+        },
+        {
+          "type": "output-matches",
+          "pass": false,
+          "detail": "deep|internal"
+        },
+        {
+          "type": "output-matches",
+          "pass": false,
+          "detail": "search"
+        }
+      ],
+      "passed": 2,
+      "total": 5,
+      "changed": {
+        "added": [],
+        "removed": [],
+        "modified": []
+      },
+      "finalText": "You've hit your 5-hour limit · resets 3:50am (local time)",
+      "workdir": "<tmp>"
+    },
+    {
+      "case": "decide-one-way-door",
+      "skill": "fe-decide",
+      "scenario": "existing",
+      "kind": "advisory",
+      "trial": 1,
+      "model": "sonnet",
+      "cliVersion": "2.1.323 (Claude Code)",
+      "date": "2026-11-13T22:20:43.733Z",
+      "seconds": 3,
+      "cost": 0,
+      "turns": 1,
+      "agentError": true,
+      "skillsSeen": [],
+      "checks": [
+        {
+          "type": "skill-used",
+          "pass": false,
+          "detail": "skills seen: none"
+        },
+        {
+          "type": "no-files-changed",
+          "pass": true,
+          "detail": ""
+        },
+        {
+          "type": "output-matches",
+          "pass": false,
+          "detail": "tripwire"
+        },
+        {
+          "type": "output-matches",
+          "pass": false,
+          "detail": "revers|migration cost|one-way"
+        }
+      ],
+      "passed": 1,
+      "total": 4,
+      "changed": {
+        "added": [],
+        "removed": [],
+        "modified": []
+      },
+      "finalText": "You've hit your 5-hour limit · resets 3:50am (local time)",
+      "workdir": "<tmp>"
+    },
+    {
+      "case": "init-profile",
+      "skill": "fe-init-profile",
+      "scenario": "existing",
+      "kind": "mutating",
+      "trial": 1,
+      "model": "sonnet",
+      "cliVersion": "2.1.323 (Claude Code)",
+      "date": "2026-11-13T22:20:46.716Z",
+      "seconds": 3,
+      "cost": 0,
+      "turns": 1,
+      "agentError": true,
+      "skillsSeen": [],
+      "checks": [
+        {
+          "type": "skill-used",
+          "pass": false,
+          "detail": "skills seen: none"
+        },
+        {
+          "type": "file-exists",
+          "pass": false,
+          "detail": "docs/frontend-architecture.md"
+        },
+        {
+          "type": "changes-within",
+          "pass": true,
+          "detail": ""
+        },
+        {
+          "type": "file-contains",
+          "pass": false,
+          "detail": "docs/frontend-architecture.md"
+        }
+      ],
+      "passed": 1,
+      "total": 4,
+      "changed": {
+        "added": [],
+        "removed": [],
+        "modified": []
+      },
+      "finalText": "You've hit your 5-hour limit · resets 3:50am (local time)",
+      "workdir": "<tmp>"
+    },
+    {
+      "case": "healthy-no-restructure",
+      "skill": "fe-restructure",
+      "scenario": "healthy",
+      "kind": "mutating",
+      "trial": 1,
+      "model": "sonnet",
+      "cliVersion": "2.1.323 (Claude Code)",
+      "date": "2026-11-13T22:20:49.597Z",
+      "seconds": 3,
+      "cost": 0,
+      "turns": 1,
+      "agentError": true,
+      "skillsSeen": [],
+      "checks": [
+        {
+          "type": "skill-used",
+          "pass": false,
+          "detail": "skills seen: none"
+        },
+        {
+          "type": "no-files-changed",
+          "pass": true,
+          "detail": ""
+        },
+        {
+          "type": "output-matches",
+          "pass": false,
+          "detail": "no smell|nothing to|no (structural )?(problem|issue|violation)|healthy|already"
+        }
+      ],
+      "passed": 1,
+      "total": 3,
+      "changed": {
+        "added": [],
+        "removed": [],
+        "modified": []
+      },
+      "finalText": "You've hit your 5-hour limit · resets 3:50am (local time)",
+      "workdir": "<tmp>"
+    },
+    {
+      "case": "legacy-partial-coverage",
+      "skill": "fe-check-structure",
+      "scenario": "legacy",
+      "kind": "readonly",
+      "trial": 1,
+      "model": "sonnet",
+      "cliVersion": "2.1.323 (Claude Code)",
+      "date": "2026-11-13T22:20:52.936Z",
+      "seconds": 3,
+      "cost": 0,
+      "turns": 1,
+      "agentError": true,
+      "skillsSeen": [],
+      "checks": [
+        {
+          "type": "skill-used",
+          "pass": false,
+          "detail": "skills seen: none"
+        },
+        {
+          "type": "no-files-changed",
+          "pass": true,
+          "detail": ""
+        },
+        {
+          "type": "output-matches",
+          "pass": false,
+          "detail": "partial|incomplete|unresolved"
+        }
+      ],
+      "passed": 1,
+      "total": 3,
+      "changed": {
+        "added": [],
+        "removed": [],
+        "modified": []
+      },
+      "finalText": "You've hit your 5-hour limit · resets 3:50am (local time)",
+      "workdir": "<tmp>"
+    },
+    {
+      "case": "laravel-inertia-placement",
+      "skill": "fe-architecture",
+      "scenario": "existing",
+      "kind": "advisory",
+      "trial": 1,
+      "model": "sonnet",
+      "cliVersion": "2.1.323 (Claude Code)",
+      "date": "2026-11-13T22:20:55.689Z",
+      "seconds": 3,
+      "cost": 0,
+      "turns": 1,
+      "agentError": true,
+      "skillsSeen": [],
+      "checks": [
+        {
+          "type": "no-files-changed",
+          "pass": true,
+          "detail": ""
+        },
+        {
+          "type": "output-matches",
+          "pass": false,
+          "detail": "Pages"
+        },
+        {
+          "type": "output-matches",
+          "pass": false,
+          "detail": "props|controller|query"
+        }
+      ],
+      "passed": 1,
+      "total": 3,
+      "changed": {
+        "added": [],
+        "removed": [],
+        "modified": []
+      },
+      "finalText": "You've hit your 5-hour limit · resets 3:50am (local time)",
+      "workdir": "<tmp>"
+    }
+  ]
+}

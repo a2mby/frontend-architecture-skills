@@ -11,7 +11,7 @@
 ## How skills use it
 
 1. **Read:** every `fe-*` skill reads the profile first. The profile outranks the defaults in this package; an enforced boundary or an explicit decision record outranks the profile.
-2. **Missing:** run discovery inline (scripts, `tsconfig`, lint config, directory layout, `AGENTS.md`), mark each fact `assumed` or `verified`, and offer `/fe-init-profile` to persist it. Do not block the task on a missing profile.
+2. **Missing:** run discovery inline (scripts, `tsconfig`, lint config, directory layout, `AGENTS.md`), mark each fact `assumed` or `verified`, and offer the `fe-init-profile` skill to persist it. Do not block the task on a missing profile.
 3. **Stale:** when a profile fact contradicts the repository, trust the repository, report the contradiction, and propose the profile edit.
 4. **Cache only what the environment cannot say:** the reason behind a convention, the authority split between services, and known debt. Leave script names and versions to their files, and keep the `Commands` table as a hint that is rediscovered each run.
 

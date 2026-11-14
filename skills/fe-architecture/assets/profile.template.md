@@ -4,6 +4,7 @@
 framework: <next | react-spa | vue | nuxt | svelte | sveltekit | angular | other> <installed version>
 sourceRoot: <path of the app source, e.g. src or apps/<app>/src>
 packageManager: <npm | pnpm | yarn | bun>
+entryPolicy: <root-only | subbarrels | declared>   # what counts as a capability's public entry; mirrors fe-scan.config.json
 level: modular-monolith   # change only when an extraction trigger fires
 ---
 
@@ -44,6 +45,7 @@ level: modular-monolith   # change only when an extraction trigger fires
 ## Known debt (preserve during unrelated work, flag when relevant)
 
 - `<ownership issue, where, why it was left>`
+- Scanner baseline: `<path to baseline file>` or `none`; last scan coverage: `<complete | partial: unresolved prefixes>`
 
 ## Decision register
 

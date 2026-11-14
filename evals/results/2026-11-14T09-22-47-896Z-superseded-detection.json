@@ -1,0 +1,766 @@
+{
+  "started": "2026-11-14T09:22:47.896Z",
+  "model": "sonnet",
+  "cliVersion": "2.1.323 (Claude Code)",
+  "isolation": "fresh temp copy of the fixture per trial; skills installed project-locally; user-level settings, CLAUDE.md and plugins of the host were NOT isolated",
+  "results": [
+    {
+      "case": "classify-tie-break",
+      "skill": "fe-architecture",
+      "scenario": "existing",
+      "kind": "advisory",
+      "trial": 1,
+      "model": "sonnet",
+      "cliVersion": "2.1.323 (Claude Code)",
+      "date": "2026-11-14T09:23:04.782Z",
+      "seconds": 17,
+      "cost": 0.1390544,
+      "turns": 5,
+      "agentError": false,
+      "skillsSeen": [
+        "fe-architecture"
+      ],
+      "checks": [
+        {
+          "type": "no-files-changed",
+          "pass": true,
+          "detail": ""
+        },
+        {
+          "type": "output-matches",
+          "pass": true,
+          "detail": "Moderate"
+        },
+        {
+          "type": "output-matches",
+          "pass": true,
+          "detail": "tripwire|promote to Complex"
+        },
+        {
+          "type": "output-not-matches",
+          "pass": true,
+          "detail": "Module Map\\s*\\n\\s*(\\||#|-)"
+        },
+        {
+          "type": "output-matches",
+          "pass": true,
+          "detail": "not run: advisory"
+        }
+      ],
+      "passed": 5,
+      "total": 5,
+      "changed": {
+        "added": [],
+        "removed": [],
+        "modified": []
+      },
+      "finalText": "**Level: Moderate.** I classified this from the skill's own case table, which lists \"Settings area, 3 tabs sharing one saved form, one API\" as Moderate. The evidence is 3 workflows (profile, notifications, billing) over one server data owner plus a local draft. There's no firm second signal such as a second integration, a reported regression, or independently changing sub-areas. Complex needs two firm signals, so it doesn't apply. The tripwire is to promote to Complex if billing gains its own SDK or validation rules, or if the tabs start changing independently.\n\n**Mode:** new capability in an existing app, so there's no existing owner. The repo is Next.js 16 and React 19, with `src/app`, `src/features/{cart,checkout,search}` and `src/shared/ui`. There's no profile or `docs/frontend-architecture.md`, so I treated conventions as observed.\n\n**Owner**\n- `src/features/settings/` (proposed) owns the capability.\n- It owns the saved settings data (server, via one query cache entry) and the editable draft. The draft is local state with explicit reset and commit, never a second server authority.\n\n**Placement**\n- `src/features/settings/index.ts` (proposed) is the public entry. It exports the `SettingsPage` component and the types.\n- `src/features/settings/settings.api.ts` (proposed) is the single API owner for read and save. It follows the existing `src/features/cart/cart.api.ts` pattern.\n- `src/features/settings/model.ts` (proposed) holds the types and the draft and commit logic, following `src/features/cart/model.ts`.\n- `src/features/settings/components/` (proposed) holds `ProfileTab`, `NotificationsTab` and `BillingTab`, plus a shared form provider or hook. The tabs are used only by this capability, so they stay private. No `_shared/` is needed unless a piece is used by several tabs and grows.\n- `src/app/settings/page.tsx` (proposed) is the route. It is only composition: it imports `SettingsPage` from `@/features/settings` and nothing deeper.\n- Tab selection belongs in the URL (a search param or nested segment). The URL is its own owner, so don't mirror it in state.\n- Nothing goes into `src/shared/`. There is no second unrelated consumer, and the form is domain-aware.\n\n**Edge note**\n- **Operations:** read settings, and save settings (one mutation covering all three tabs).\n- **Owner and key:** the query cache with a `settings` key.\n- **Invalidation:** invalidate or refetch on save success.\n- **Consistency:** wait for the server rather than saving optimistically, because billing changes are sensitive.\n- **Failure:** loading, error and retry states, with the draft preserved on a failed save.\n- **Duplicate writes:** disable submit while a save is pending.\n\n**Tradeoff note:** one form and draft shared across tabs solves cross-tab dirty state and a single save. It costs coupling between tabs. It's wrong if the tabs get separate save endpoints, in which case split the drafts. Misuse breaks the single source of truth if a tab keeps its own copy of server data.\n\n**Enforcement gap:** there's no boundary rule yet (`package.json` lint is an echo stub). Add an import rule so other code can only import `@/features/settings` and not its internals, once a second capability consumes it.\n\n**Verified:** not run: advisory task. I only read the directory layout, and no files were changed.",
+      "workdir": "<tmp>"
+    },
+    {
+      "case": "check-structure-seeded",
+      "skill": "fe-check-structure",
+      "scenario": "legacy",
+      "kind": "readonly",
+      "trial": 1,
+      "model": "sonnet",
+      "cliVersion": "2.1.323 (Claude Code)",
+      "date": "2026-11-14T09:23:37.687Z",
+      "seconds": 33,
+      "cost": 0.18949560000000001,
+      "turns": 15,
+      "agentError": false,
+      "skillsSeen": [
+        "fe-architecture"
+      ],
+      "checks": [
+        {
+          "type": "skill-used",
+          "pass": false,
+          "detail": "skills seen: fe-architecture"
+        },
+        {
+          "type": "no-files-changed",
+          "pass": true,
+          "detail": ""
+        },
+        {
+          "type": "output-matches",
+          "pass": true,
+          "detail": "cycle"
+        },
+        {
+          "type": "output-matches",
+          "pass": true,
+          "detail": "internal/price"
+        },
+        {
+          "type": "output-matches",
+          "pass": true,
+          "detail": "CartBadge"
+        },
+        {
+          "type": "output-matches",
+          "pass": true,
+          "detail": "coverage"
+        }
+      ],
+      "passed": 5,
+      "total": 6,
+      "changed": {
+        "added": [],
+        "removed": [],
+        "modified": []
+      },
+      "finalText": "## Structure check: src\n\nProfile, `AGENTS.md` and the decision register are all missing. Source root `src`, capabilities directory `features` and framework are `assumed`. The framework is unknown: there is no React, Vue or similar in the files I read, and I did not open `package.json` or `tsconfig.json`. The scanner reads `tsconfig.json` for the `@/` alias.\n\nCapabilities:\n- **cart**: Simple, assumed (4 files, one mutation, no firm Complex signals).\n- **checkout**: Simple, assumed (1 file, one function).\n\nScan: 3 errors / 0 warnings / 0 info, baselined: 0; coverage: complete (7 of 7 internal imports resolved, 0 unresolved)\n\nPass (within the checked scope):\n- No unresolved imports.\n- `search` imports `cart` and `checkout` through their root entries only. This is by `search/index.ts:1-2`.\n- No oversized files and no naming smells were reported.\n\nFail (ranked):\n1. **Import cycle inside `cart`.** `cart/model.ts:1` imports `cart/internal/price.ts`, and `price.ts:1` imports `model.ts`.\n   - Evidence: `model.total(n)` calls `price(n-1)`, and `price(n)` calls `total(n)`. Together they recurse without a base case. For n > 0, `price(n)` calls `total(n)`, which calls `price(n-1)`, down to `total(0) = 0`, so it terminates by luck of the arithmetic.\n   - Smallest repair: put the shared pricing rule (the 1.2 multiplier and the total) in one module, or have `price` take its input as an argument instead of importing `model`.\n   - Cost / not-when: the cost is one small edit. Skip it only if the two functions are meant to be mutually recursive, which the code gives no sign of.\n2. **Cross-capability deep import.** `checkout/index.ts:1` imports `@/features/cart/internal/price`, which is private to `cart`.\n   - Evidence: `cart/index.ts` exports only `addItem`, so checkout has no public route to the price rule.\n   - Smallest repair: export `price` from `cart/index.ts`, then import `@/features/cart` in checkout.\n   - Cost / not-when: this widens cart's contract by one function. If checkout should own its own pricing instead, move the rule into checkout. Don't do that if cart also needs it, or you will duplicate the rule (see manual item below).\n3. **`shared` imports a capability.** `shared/ui/CartBadge.tsx:1` imports `addItem` from `@/features/cart`.\n   - Evidence: the scanner reports it, and I confirmed it in the file. `CartBadge` is domain-aware, and it also calls a POST mutation as its render result.\n   - Smallest repair: move `CartBadge` into `features/cart/` and export it from the entry, or keep it in `shared` and pass the data and callback in as props.\n   - Cost / not-when: moving it means updating its consumers; none exist in `src`, so the cost is currently nil. Do not keep it in `shared` unless a second, unrelated capability needs it and it takes no domain input.\n4. **Manual: missing edge note for the cart mutation.** `cart/cart.api.ts:1` fires a `POST /api/cart/${id}` with no error handling, no retry, no duplicate-write guard and no invalidation. `CartBadge` and `search/quickBuy` call it without awaiting or handling failure.\n   - Smallest repair: add an edge note covering failure behavior and a double-submit guard, and return or await the promise.\n   - Cost / not-when: skip only if the endpoint is idempotent and failures are handled elsewhere. That is not visible in this scope.\n5. **Manual: possible duplicated domain rule.** The tax-like 1.2 multiplier lives only in `price.ts` today. It becomes duplicated if repair 2 is done by copying it into checkout. Fix by exporting it once, as in repair 2.\n\nManual items checked with no finding:\n- No public entry mixes client and server exports.\n- No state is copied between server data, store and URL, because there is no store.\n- No component imports 3 or more capabilities.\n- I found no lint rule or CI step that enforces any of the above. All three scanner findings are currently unblocked.\n\nNot checked: the scanner reads only static imports, re-exports, literal `import()` and literal `require()`, so framework template references and computed paths are not covered. I also did not check the framework, `package.json` scripts or CI config, and the `@/` alias beyond the scanner's own resolution. Nothing consumes `CartBadge` or `search`, so I could not trace real usage.\n\nNext: `fe-restructure` src/features/cart (cycle plus the public price export) | `fe-enforce` (add deep-import, shared-to-capability and cycle checks) | `fe-init-profile` (to record the assumed facts)",
+      "workdir": "<tmp>"
+    },
+    {
+      "case": "vue-portability",
+      "skill": "fe-architecture",
+      "scenario": "existing",
+      "kind": "advisory",
+      "trial": 1,
+      "model": "sonnet",
+      "cliVersion": "2.1.323 (Claude Code)",
+      "date": "2026-11-14T09:23:55.355Z",
+      "seconds": 18,
+      "cost": 0.1496988,
+      "turns": 8,
+      "agentError": false,
+      "skillsSeen": [
+        "fe-architecture"
+      ],
+      "checks": [
+        {
+          "type": "no-files-changed",
+          "pass": true,
+          "detail": ""
+        },
+        {
+          "type": "output-not-matches",
+          "pass": true,
+          "detail": "useState|useEffect"
+        },
+        {
+          "type": "output-matches",
+          "pass": true,
+          "detail": "query|URL"
+        },
+        {
+          "type": "output-matches",
+          "pass": true,
+          "detail": "draft"
+        }
+      ],
+      "passed": 4,
+      "total": 4,
+      "changed": {
+        "added": [],
+        "removed": [],
+        "modified": []
+      },
+      "finalText": "**Owner:** the existing `orders` capability, at `src/features/orders/`. It has one public entry, `src/features/orders/index.ts`, and one consumer-facing component, `OrdersList.vue`. I read both. No profile (`docs/frontend-architecture.md`), decision register or other consumer exists in the repo. Facts about the rest of the app are `assumed`.\n\n**Level:** Moderate. There are two workflows (browse the list, then filter it), and the list holds server data plus filter UI state. That is not Complex, because there is no second firm signal. Tradeoff note: a capability folder with one data owner solves the filter being a mixed concern. It costs a few extra files. It is wrong if the filter is reused by an unrelated capability, and it breaks if filter state is copied into a second store.\n\n**State owners (one per datum):**\n\n| Datum | Owner |\n|---|---|\n| Committed filters (status, date range) | URL query via `vue-router`, per the Vue reference, which says committed filters live in the URL. This is what survives reload, and it also gives shareable links and working back/forward. |\n| Draft filters (what the user is editing before Apply) | Local `ref` inside the filter component, with explicit Apply and Reset. |\n| Orders data | The data owner for the list (a composable). Its key includes the committed filters. The filtered view comes from the server query or a `computed`, never a synced copy. |\n\nPinia is installed but is the wrong owner here. A store would mirror URL state and lose it on reload unless you persist it too. Don't use browser storage either, unless \"survive reload\" has to hold when the URL is absent. That would be a separate decision.\n\n**Placement:**\n- `src/features/orders/OrdersFilters.vue (proposed)`: draft state plus Apply and Reset. It receives the committed value as a prop and emits `apply`. It never touches the router.\n- `src/features/orders/useOrderFilters.ts (proposed)`: the composable that owns the URL read and write. It parses and validates the query (status against the allowed set, ISO dates, `from <= to`) and exposes a typed `committed` computed and `commit()` / `reset()`. Bad query values fall back to defaults.\n- `src/features/orders/useOrders.ts (proposed)`: the data owner, keyed on the committed filters. It replaces the bare `ref<string[]>([])` in `OrdersList.vue:3`, which has no data owner yet.\n- `OrdersList.vue`: composes the three above. Rung 2 of the ownership ladder applies, since everything is private to the capability.\n- `index.ts`: export only what other code needs, which is likely nothing new. Export the filter types only if another capability needs them. Don't add a `shared/` folder, because there's no second consumer.\n\n**Edge note (new network edge):**\n- Read operation: list orders with `status`, `from` and `to` params. I assumed the contract and could not verify it, because no API layer exists in the repo.\n- Key: the filters.\n- Freshness: refetch on commit.\n- Consistency: wait, not optimistic.\n- Failure: loading, empty and error states.\n- Stale responses: cancel or ignore them when a newer commit arrives.\n- Duplicate writes: none, since it's read-only.\n\n**Open question for you:** is the date range filtered server-side or client-side? If the API can't filter, filter with a `computed` in `useOrders`. The URL stays the owner either way.\n\n**Tripwire:** promote to Complex if a second integration (saved views, exports) or independently changing sub-areas appear. Until then, keep it as it is.\n\n**Enforcement gap:** no eslint boundary rule or scanner config is visible. Add `eslint-plugin-boundaries` or run `fe-scan.mjs src` once a second capability exists.\n\n**Verified:** not run, advisory task. Nothing was changed. I only read `OrdersList.vue`, `index.ts`, `package.json` and the Vue reference.",
+      "workdir": "<tmp>"
+    },
+    {
+      "case": "greenfield-new-capability",
+      "skill": "fe-apply-feature",
+      "scenario": "greenfield",
+      "kind": "advisory",
+      "trial": 1,
+      "model": "sonnet",
+      "cliVersion": "2.1.323 (Claude Code)",
+      "date": "2026-11-14T09:24:15.299Z",
+      "seconds": 20,
+      "cost": 0.14632509999999999,
+      "turns": 5,
+      "agentError": false,
+      "skillsSeen": [
+        "fe-architecture"
+      ],
+      "checks": [
+        {
+          "type": "skill-used",
+          "pass": false,
+          "detail": "skills seen: fe-architecture"
+        },
+        {
+          "type": "no-files-changed",
+          "pass": true,
+          "detail": ""
+        },
+        {
+          "type": "no-invented-paths",
+          "pass": true,
+          "detail": "every non-existent path is labeled proposed/new"
+        },
+        {
+          "type": "output-matches",
+          "pass": true,
+          "detail": "proposed"
+        },
+        {
+          "type": "output-not-matches",
+          "pass": true,
+          "detail": "features/(products|product-list)/(components|hooks|api|model|types)/[\\w.-]+/[\\w.-]+/"
+        }
+      ],
+      "passed": 4,
+      "total": 5,
+      "changed": {
+        "added": [],
+        "removed": [],
+        "modified": []
+      },
+      "finalText": "**Locate**\n- Mode: new app, with no existing code for this feature. I opened `package.json`, `tsconfig.app.json`, `src/App.tsx` and `src/main.tsx`. `App.tsx` only renders `<h1>Hello</h1>`.\n- No `docs/frontend-architecture.md`, `AGENTS.md` or decision register exists, so I worked from the files above. The profile facts below are labeled `verified` or `assumed`.\n- Framework: React 19 + Vite SPA, verified from `package.json`. There is no router and no data library.\n- Source root: `src`, with the `@/*` alias, verified.\n- Scripts: `build` is `tsc -b && vite build`, so `tsc -b` is the typecheck. `lint` runs `eslint .`, but eslint is not in `devDependencies` and no config was found, so lint is probably broken.\n- Framework-owned directories: none beyond `src/main.tsx`, which is bootstrap (rung 5).\n- The first owner is `src/ProductsList.tsx` (proposed). The one existing consumer is `src/App.tsx`, which I opened.\n\n**Level: Simple**\n- Workflows: one, \"view products and filter by name\". The filter is a view of the list, not a separate workflow.\n- State: the server owns the product data and the filter text is local UI state. That is a fetch plus a local filter, which is not the Moderate signal \"server data plus local UI state\" in the table.\n- Files: about 3.\n- The Complex signals have no evidence yet. There is no second integration, no regression history, and no domain rules.\n- Tripwire: promote to Moderate, a `features/products/` folder with one public entry, when a second product workflow lands (detail, edit, pagination) or a second route reuses the list.\n\n**Structure**\n- Do not create `features/`, `shared/`, barrels or a store. One workflow means flat and colocated.\n\n```\nsrc/\n  main.tsx                    (exists, unchanged)\n  App.tsx                     (exists; renders <ProductsList/>)\n  ProductsList.tsx            (proposed) table + filter input; owns filter state\n  useProducts.ts              (proposed) fetch /api/products; owns loading/error/data\n  product.ts                  (proposed) Product type and the response parser\n```\n\n**State owners**\n- Product data: the server owns it. `useProducts` holds a local copy as `{status, data, error}`. Use plain `useEffect` with an `AbortController`. No query library is needed for one read, and adding one would be a one-way door to route through `fe-decide`.\n- Filter text: local `useState` in `ProductsList`.\n- Filtered rows: derived on render with a case-insensitive `name.includes`. Don't store or sync them.\n\n**Edge note for `GET /api/products`** (a new network edge, so one is required)\n- Contract: no API contract exists in the repo, so the shape is `proposed`. Assume `Product = { id: string|number; name: string; ... }` returned as an array. Parse it at the edge in `product.ts` rather than trusting the JSON. Confirm the real shape with the backend before building, or plan a mock (an MSW handler or a Vite dev proxy to a stub).\n- Owner and key: `useProducts`. There is no cache, so it fetches once on mount.\n- Freshness: no invalidation for now. Add a retry action if wanted.\n- Failure states: the table shows loading, empty, and error states. An error also covers a non-2xx response or a parse failure. Aborting on unmount is not an error.\n- Mutations: none, so no duplicate-write guard is needed.\n\n**Tradeoff note:** colocated flat files are cheap and fully reversible. They would cost a move once a second workflow or route arrives, and the tripwire above covers that. Putting the fetch inside the component would break testing and later reuse, which is why it sits in a hook.\n\n**Enforce:** no boundary exists yet, so no rule is needed. Add an import rule and a cycle check when the second capability appears. That is a named gap, not an omission.\n\n**Owner:** `ProductsList.tsx` for UI and filter state, `useProducts.ts` for fetched data, `product.ts` for the contract. `App.tsx` only composes them.\n\n**Placement:** Simple, flat in `src/`. Ladder rung 1 for all three files, since each is used by one component, and rung 5 for `App.tsx` and `main.tsx`. Every new path is `(proposed)`.\n\n**Verified:** not run: advisory task. I created and edited no files. When implementing, run `tsc -b` and `vite build`. Fix or add eslint before relying on `lint`. There is no test runner, so add one only if you want a behavioral test at the hook boundary.",
+      "workdir": "<tmp>"
+    },
+    {
+      "case": "greenfield-new-capability",
+      "skill": "fe-apply-feature",
+      "scenario": "greenfield",
+      "kind": "advisory",
+      "trial": 2,
+      "model": "sonnet",
+      "cliVersion": "2.1.323 (Claude Code)",
+      "date": "2026-11-14T09:24:32.804Z",
+      "seconds": 17,
+      "cost": 0.1472639,
+      "turns": 5,
+      "agentError": false,
+      "skillsSeen": [
+        "fe-architecture"
+      ],
+      "checks": [
+        {
+          "type": "skill-used",
+          "pass": false,
+          "detail": "skills seen: fe-architecture"
+        },
+        {
+          "type": "no-files-changed",
+          "pass": true,
+          "detail": ""
+        },
+        {
+          "type": "no-invented-paths",
+          "pass": true,
+          "detail": "every non-existent path is labeled proposed/new"
+        },
+        {
+          "type": "output-matches",
+          "pass": true,
+          "detail": "proposed"
+        },
+        {
+          "type": "output-not-matches",
+          "pass": true,
+          "detail": "features/(products|product-list)/(components|hooks|api|model|types)/[\\w.-]+/[\\w.-]+/"
+        }
+      ],
+      "passed": 4,
+      "total": 5,
+      "changed": {
+        "added": [],
+        "removed": [],
+        "modified": []
+      },
+      "finalText": "**Locate**\n- Mode: new capability in a barely-started app. The app has only a hello-world shell, so there is no existing owner for products. Nothing consumes products yet except the existing `src/App.tsx`, which I opened.\n- Project facts, all `verified` from `package.json`, `src/main.tsx` and `src/App.tsx`: React 19 + Vite SPA, TypeScript, source root `src`.\n- Not found: `docs/frontend-architecture.md`, `AGENTS.md`, a decision register, a router, a data library, a test runner. There is no `eslint` dependency, though `npm run lint` calls it.\n- `/api/products` is not defined anywhere in the repo, so its contract is `assumed`.\n\n**Level: Simple**\n- One workflow: read the list and filter it.\n- The state is server data plus one local filter string. The filter is local UI state, not a second workflow, so this is not Moderate.\n- It needs about 3–4 files and has one consumer.\n- Promote to Moderate if a second route reuses it or pagination or server-side search arrives.\n\n**Placement.** Start flat, with no `features/`, no barrel and no `shared/` ([Starting empty](#starting-empty)).\n- `src/ProductsList.tsx` (proposed). It holds the table, the filter input and the filter state. The filter is a string kept in local state, and the visible rows are derived on render, not stored.\n- `src/useProducts.ts` (proposed). It is the data owner: it fetches `/api/products` and returns `{ products, status, error }`. Add it only if the component gets noisy. Otherwise keep the fetch inside `ProductsList.tsx`.\n- `src/products.ts` (proposed). It holds the `Product` type and the response check, so the assumed contract lives in one place.\n- `src/App.tsx` (exists) renders `<ProductsList />`. This is rung 5 composition, and it is the only edit to an existing file.\n\n**Ownership of state**\n- The product list is owned by the server. The hook holds it in local state, and there is no global store or cache library for one read.\n- The filter string is local state in `ProductsList`.\n- The filtered rows are derived from the list and the filter, never copied into state.\n\n**Edge note for `GET /api/products`**\n- Contract: `proposed`. Plan a mock, either a Vite dev-server middleware or a stub, and confirm the real shape before relying on it.\n- Owner and key: `useProducts`, with no cache key.\n- Freshness: fetch on mount, with no invalidation yet.\n- Failure behavior: show loading, empty and error states, and abort the request on unmount.\n- Not applicable: consistency and duplicate-write guard, because the edge is read-only.\n\n**Tradeoff note.** The flat layout is cheap and reversible. It costs nothing now. It stops being the right choice once a second capability or route appears, and then you move it into `features/products/` with one public entry.\n\n**Gaps and follow-ups**\n- Add `docs/frontend-architecture.md` with `sourceRoot: src` through `fe-init-profile`.\n- Enforcement is deferred. No boundary exists yet, so a rule belongs with the second capability (`fe-enforce`).\n- `eslint` is missing from `devDependencies`, so `npm run lint` will fail.\n- There are no test or typecheck scripts beyond `tsc -b` in build. When a test runner is added, cover the filter and the loading, empty and error states.\n\n**Owner:** `src/ProductsList.tsx` (proposed) owns the table, the filter and the render states. `src/useProducts.ts` (proposed) owns the fetch. The server owns the product data.\n**Placement:** flat in `src`, with `src/App.tsx` as the only consumer. Everything else is `(proposed)`.\n**Verified:** not run: advisory task.",
+      "workdir": "<tmp>"
+    },
+    {
+      "case": "greenfield-new-capability",
+      "skill": "fe-apply-feature",
+      "scenario": "greenfield",
+      "kind": "advisory",
+      "trial": 3,
+      "model": "sonnet",
+      "cliVersion": "2.1.323 (Claude Code)",
+      "date": "2026-11-14T09:24:54.037Z",
+      "seconds": 21,
+      "cost": 0.14631329999999998,
+      "turns": 5,
+      "agentError": false,
+      "skillsSeen": [
+        "fe-architecture"
+      ],
+      "checks": [
+        {
+          "type": "skill-used",
+          "pass": false,
+          "detail": "skills seen: fe-architecture"
+        },
+        {
+          "type": "no-files-changed",
+          "pass": true,
+          "detail": ""
+        },
+        {
+          "type": "no-invented-paths",
+          "pass": true,
+          "detail": "every non-existent path is labeled proposed/new"
+        },
+        {
+          "type": "output-matches",
+          "pass": true,
+          "detail": "proposed"
+        },
+        {
+          "type": "output-not-matches",
+          "pass": true,
+          "detail": "features/(products|product-list)/(components|hooks|api|model|types)/[\\w.-]+/[\\w.-]+/"
+        }
+      ],
+      "passed": 4,
+      "total": 5,
+      "changed": {
+        "added": [],
+        "removed": [],
+        "modified": []
+      },
+      "finalText": "**Locate**\n- Mode: new app, no existing code for this capability. There is no profile (`docs/frontend-architecture.md`), no `AGENTS.md` and no decision register. Everything below is `assumed` from what I opened.\n- Opened: `package.json` (React 19, Vite 6, TypeScript, no router, no data library, no test runner, `lint` script but no eslint dependency), `src/main.tsx` (bootstrap) and `src/App.tsx` (just `<h1>Hello</h1>`).\n- Framework-owned: `index.html`, `vite.config`, `src/main.tsx`. These stay as they are. `main.tsx` and `App.tsx` are application composition (rung 5).\n- Source root: `src`.\n- First owner: `src/ProductsList.tsx` (proposed). `App.tsx` is its only consumer.\n\n**Level: Simple**\n- One workflow: read the list and filter it by name.\n- State is local: the filter text, and the fetched list, which is server data.\n- About 3 files.\n- There is one new network edge (`GET /api/products`), so I write an edge note.\n\n**Structure (all `(proposed)`)**\n```\nsrc/App.tsx                 (existing) renders <ProductsList />\nsrc/ProductsList.tsx        (proposed) fetch, loading/error/empty states, filter input, table\nsrc/products.ts             (proposed) Product type + fetchProducts(signal)\nsrc/ProductsList.test.tsx   (proposed) behavioral test\n```\n- Start flat. Don't create `features/`, `shared/`, a barrel or a store yet.\n- Split the table into its own component only if it gains a second consumer or needs an isolated test.\n- `fetchProducts` sits in its own file so the network edge has one place to mock.\n- `fetchProducts` takes an `AbortSignal`, and a `useEffect` aborts it on unmount.\n- Promote to `src/features/products/` with a single `index.ts` entry when it reaches Moderate. Triggers: a second route reuses it, or pagination, sorting or mutations arrive. When that happens, move to a query cache (TanStack Query) as the data owner. That is a one-way-door-ish choice, so raise it through `fe-decide` then, not now.\n\n**State ownership**\n- Product list: the server is authoritative. It lives in `ProductsList` local state, which is the query cache stand-in.\n- Filter text: local `useState`. If the filter should survive reload or be shareable, move it to the URL, but that needs a router, so skip it for now.\n- Filtered rows: derived with `products.filter(p => p.name.toLowerCase().includes(q.trim().toLowerCase()))`, ideally in `useMemo`. Never store them in state.\n- Filtering is client-side, which is fine until the list is large or paginated. At that point, switch to a server-side `?name=` query. That is the tripwire.\n\n**Edge note: `GET /api/products`**\n- Contract: not confirmed (`proposed`). Assume `Product[]` with `{ id: string; name: string; price: number }`. Confirm it against the real API or OpenAPI spec before coding the UI. Until then, mock it with a Vite dev middleware or MSW. Validate the response at the boundary (a runtime schema such as zod, or at minimum a guard).\n- Owner and key: `ProductsList` state, keyed by the single URL.\n- Freshness: fetch on mount. Nothing invalidates it because there are no mutations. Add a refetch button later if needed.\n- Consistency: read-only, so there is nothing to reconcile.\n- Failure: show loading, error (with retry) and empty (\"No products\") states. Add a request timeout via `AbortSignal.timeout`. Treat a non-2xx response as an error. A filter that matches nothing gets a distinct \"No matches\" message.\n- Duplicate-write guard: not applicable.\n\n**Tradeoff note:** the flat colocated layout solves speed and low ceremony. It costs having to move files when a second route reuses it. It is not right once the list is shared or paginated. If misused, for example by growing `src/` with unrelated features, it turns into a flat pile that needs the scanner and a `features/` folder.\n\n**Enforcement:** no boundary exists yet, so there is no rule to add. Add the import-rule and cycle check (`fe-enforce`) when the second capability appears. The gap is named here.\n\n**Owner:** `src/ProductsList.tsx` (proposed) owns the list state, filter state and presentation. `src/products.ts` (proposed) owns the API contract and the fetch call. `src/App.tsx` only composes.\n\n**Placement:** Simple level, rung 1/2 (colocated beside its consumer `App.tsx`). There is no `shared/` and no barrel.\n\n**Verified:** not run: advisory task. No files were created or edited. Note for later: `npm run lint` will fail because `eslint` isn't in `devDependencies` and there is no config. I've left that out of scope as a follow-up. There are also no test or scanner commands in `package.json` yet.",
+      "workdir": "<tmp>"
+    },
+    {
+      "case": "apply-feature-simple",
+      "skill": "fe-apply-feature",
+      "scenario": "existing",
+      "kind": "mutating",
+      "trial": 1,
+      "model": "sonnet",
+      "cliVersion": "2.1.323 (Claude Code)",
+      "date": "2026-11-14T09:25:14.185Z",
+      "seconds": 20,
+      "cost": 0.172129,
+      "turns": 8,
+      "agentError": false,
+      "skillsSeen": [
+        "fe-architecture"
+      ],
+      "checks": [
+        {
+          "type": "skill-used",
+          "pass": false,
+          "detail": "skills seen: fe-architecture"
+        },
+        {
+          "type": "changes-within",
+          "pass": true,
+          "detail": ""
+        },
+        {
+          "type": "no-new-files-matching",
+          "pass": false,
+          "detail": "src/features/newsletter/NewsletterFooter.tsx"
+        },
+        {
+          "type": "scan-errors-not-higher",
+          "pass": true,
+          "detail": "before 3, after 3"
+        },
+        {
+          "type": "output-matches",
+          "pass": true,
+          "detail": "Owner"
+        },
+        {
+          "type": "new-file-count-at-most",
+          "pass": true,
+          "detail": "1 new files"
+        }
+      ],
+      "passed": 4,
+      "total": 6,
+      "changed": {
+        "added": [
+          "src/features/newsletter/NewsletterFooter.tsx"
+        ],
+        "removed": [],
+        "modified": []
+      },
+      "finalText": "Added `src/features/newsletter/NewsletterFooter.tsx`: a footer with an email input and a Subscribe button that POSTs `{ email }` to `/api/newsletter`.\n\nIt isn't mounted anywhere yet. `src` has no layout or route files, so import it where your app's footer goes. I didn't test the form itself.\n\n**Owner:** `NewsletterFooter`, a single client component that holds the email and the status as local state. The status is idle, sending, done or error.\n**Placement:** Simple level (one workflow, local state, one file). It sits in `src/features/newsletter/` to match the repo's `features/` folder, with no `index.ts` barrel and no `shared/`.\n**Behavior:**\n- The email input is required and uses `type=\"email\"`.\n- The button is disabled while the request is in flight, which guards against double submits.\n- It shows \"Thanks for subscribing.\" on success and \"Something went wrong. Please try again.\" on failure. The message sits in a `role=\"status\"` element.\n- Every non-2xx response counts as failure.\n\n**Edge note for `/api/newsletter`:**\n- **Contract:** the endpoint doesn't exist in this repo. The request body `{ email }` as JSON and any 2xx response are my assumption, so the contract is `proposed`.\n- **Mock plan:** if the endpoint isn't ready, mock it with a 200 response.\n- **Freshness:** nothing is cached.\n- **Retry:** there is no automatic retry; the user resubmits.\n\n**Verified:**\n- `lint` and `typecheck` only run `echo` stubs in `package.json`, so they check nothing real. There is no test or build script.\n- The scan reports 3 errors, all in existing code:\n  - `features/checkout` deep-imports `cart/internal/price.ts`.\n  - `shared/ui/CartBadge.tsx` imports the `cart` feature.\n  - `cart/internal/price.ts` and `cart/model.ts` import each other.\n- The scan was complete (7 of 7 imports resolved), and none of the errors involve the new file.\n\n**Risks / follow-ups:**\n- The three existing boundary violations above should go through `fe-restructure`.\n- I didn't add an enforcement rule, because no new boundary was introduced.",
+      "workdir": "<tmp>"
+    },
+    {
+      "case": "restructure-deep-import",
+      "skill": "fe-restructure",
+      "scenario": "legacy",
+      "kind": "mutating",
+      "trial": 1,
+      "model": "sonnet",
+      "cliVersion": "2.1.323 (Claude Code)",
+      "date": "2026-11-14T09:25:40.970Z",
+      "seconds": 27,
+      "cost": 0.189465,
+      "turns": 11,
+      "agentError": false,
+      "skillsSeen": [
+        "fe-architecture"
+      ],
+      "checks": [
+        {
+          "type": "skill-used",
+          "pass": false,
+          "detail": "skills seen: fe-architecture"
+        },
+        {
+          "type": "changes-within",
+          "pass": true,
+          "detail": ""
+        },
+        {
+          "type": "scan-errors-not-higher",
+          "pass": true,
+          "detail": "before 3, after 2"
+        },
+        {
+          "type": "scan-rule-max",
+          "pass": true,
+          "detail": "deep-import in features/checkout/: 0"
+        }
+      ],
+      "passed": 3,
+      "total": 4,
+      "changed": {
+        "added": [],
+        "removed": [],
+        "modified": [
+          "src/features/cart/index.ts",
+          "src/features/checkout/index.ts"
+        ]
+      },
+      "finalText": "Checkout no longer deep-imports cart's internals. The scan shows the `deep-import` violation gone, and the error count went from 3 to 2. The two that remain were there before I started and are outside this request. Checkout now imports `price` from `@/features/cart`, and cart's public entry re-exports it. I didn't change anything else.\n\n**Baseline (before the change)**\n- `typecheck` and `lint` are `echo` stubs in `package.json`, so I'm reporting them as unavailable. There is no `node_modules` and no real `tsc` to run.\n- The scanner's coverage was complete (7 of 7 imports resolved) and it reported 3 errors: the checkout deep import, `shared-imports-capability` and `import-cycle`.\n\n**Diagnosis**\n- `src/features/checkout/index.ts:1` imported `src/features/cart/internal/price` across the cart boundary.\n\n**Ownership**\n- Cart owns pricing and checkout consumes it. The public entry `src/features/cart/index.ts` now exports `price`. The edge `checkout → cart/internal/price` is gone and replaced by `checkout → cart`, which is allowed. It adds no new cycle: `search` → `cart` and `checkout`, and `checkout` → `cart`.\n- **Tradeoff:** cart's public surface grows by one export. If `price` stops being a cart-level concept, it should move to a checkout-owned rule.\n\n**Changes**\n- `src/features/cart/index.ts`: added `export { price } from \"./internal/price\";`\n- `src/features/checkout/index.ts`: the import now reads `from \"@/features/cart\"`.\n\n**Proof**\n- The re-scan was still complete (8 of 8 imports resolved), and the targeted edge no longer appears.\n- I did not run the deliberate forbidden-import probe. It needed a temporary edit to checkout that my shell command wasn't approved to make. Rerunning the scanner after adding a deep import such as `@/features/cart/model` would show the `deep-import` error return.\n- I did not install a regression rule. The scanner already flags deep imports under its default root-only entry policy, so I'd recommend wiring `fe-scan.mjs` into CI or the `lint` script through `fe-enforce`. It is not installed.\n\n**Risks / follow-ups (left alone, as requested)**\n- `src/features/cart/internal/price.ts` and `src/features/cart/model.ts` import each other. At runtime `total(n)` calls `price(n - 1)`, which calls `total(n - 1)`, so it never terminates for positive `n`.\n- `src/shared/ui/CartBadge.tsx` imports the cart capability, which breaks the rule that shared code stays domain-free.\n\nI skipped the decision note since this followed the existing public-entry pattern.",
+      "workdir": "<tmp>"
+    },
+    {
+      "case": "enforce-negative-test",
+      "skill": "fe-enforce",
+      "scenario": "legacy",
+      "kind": "mutating",
+      "trial": 1,
+      "model": "sonnet",
+      "cliVersion": "2.1.323 (Claude Code)",
+      "date": "2026-11-14T09:28:28.334Z",
+      "seconds": 167,
+      "cost": 0.7431279000000001,
+      "turns": 23,
+      "agentError": false,
+      "skillsSeen": [
+        "fe-architecture"
+      ],
+      "checks": [
+        {
+          "type": "skill-used",
+          "pass": false,
+          "detail": "skills seen: fe-architecture"
+        },
+        {
+          "type": "npm-script-gate",
+          "pass": true,
+          "detail": "clean exit 0, with injected violation exit 1"
+        },
+        {
+          "type": "file-exists",
+          "pass": true,
+          "detail": "fe-scan.baseline.json"
+        }
+      ],
+      "passed": 2,
+      "total": 3,
+      "changed": {
+        "added": [
+          "fe-scan.baseline.json",
+          "fe-scan.config.json",
+          "scripts/fe-scan.mjs"
+        ],
+        "removed": [],
+        "modified": [
+          "package.json"
+        ]
+      },
+      "finalText": "`npm run check:boundaries` is wired and passes on the real code. It fails only on new violations. I did not update the profile's `Enforced boundaries` section, because there is no `docs/frontend-architecture.md` in this repo.\n\n**What I added**\n- `scripts/fe-scan.mjs`: a copy of the dependency-free scanner. A shell `cp` from the skills directory was blocked, so I recreated it with the Write tool. `diff` shows it is byte-identical to the original.\n- `fe-scan.config.json`: sets `entryPolicy: root-only`, so a capability's only public entry is its root `index.ts`.\n- `fe-scan.baseline.json`: records the 3 existing violations, each with a specific reason and no expiry.\n- `package.json`: the `check:boundaries` script runs `node scripts/fe-scan.mjs src --baseline fe-scan.baseline.json --strict-coverage`. No packages were installed.\n\n**Baselined existing violations (known debt, not fixed)**\n\n| Rule | Where |\n|---|---|\n| `deep-import` | `features/checkout/index.ts` imports `cart/internal/price` |\n| `import-cycle` | `cart/model.ts` and `cart/internal/price.ts` import each other |\n| `shared-imports-capability` | `shared/ui/CartBadge.tsx` imports the cart capability |\n\n**Negative test.** I added five throwaway files; the check failed on all five (exit 1) and I deleted them afterwards:\n- **Aliased deep import:** `@/features/cart/model`\n- **Relative deep import:** `../cart/internal/price`\n- **Named re-export:** `export { total } from \"../cart/model\"`\n- **Star re-export:** `export * from \"@/features/cart/cart.api\"`\n- **Shared importing a capability:** `shared/ui` importing `@/features/search`\n\nThe final run on the real code reports 0 errors and 3 baselined, with 100% of imports resolved (7 of 7).\n\n**Limits**\n- The scanner reads only static imports, literal `import()` and literal `require()`. It does not see runtime-computed paths.\n- It does not check the Module Map's named module directions inside Complex capabilities. It only checks entries, shared and cycles.\n- Per-capability rules come from the `features/` directory, so a new capability is covered without config changes.\n- No CI file exists in this repo. The script is the enforcement point until someone calls it from CI.\n\n**Decision for you:** fix the 3 violations now, or keep the baseline for the time being. The fixes are small:\n- Export `price` from `features/cart/index.ts`.\n- Break the `price`/`model` cycle.\n- Move `CartBadge` into `features/cart`, or pass `addItem` in as a prop.",
+      "workdir": "<tmp>"
+    },
+    {
+      "case": "review-branch-readonly",
+      "skill": "fe-review",
+      "scenario": "existing",
+      "kind": "readonly",
+      "trial": 1,
+      "model": "sonnet",
+      "cliVersion": "2.1.323 (Claude Code)",
+      "date": "2026-11-14T09:28:52.403Z",
+      "seconds": 24,
+      "cost": 0.16163670000000002,
+      "turns": 10,
+      "agentError": false,
+      "skillsSeen": [
+        "fe-architecture"
+      ],
+      "checks": [
+        {
+          "type": "skill-used",
+          "pass": false,
+          "detail": "skills seen: fe-architecture"
+        },
+        {
+          "type": "git-unchanged",
+          "pass": true,
+          "detail": "status=\"\" branch=feature worktrees=1 stash=\"\""
+        },
+        {
+          "type": "no-files-changed",
+          "pass": true,
+          "detail": ""
+        },
+        {
+          "type": "output-matches",
+          "pass": true,
+          "detail": "deep|internal"
+        },
+        {
+          "type": "output-matches",
+          "pass": true,
+          "detail": "search"
+        }
+      ],
+      "passed": 4,
+      "total": 5,
+      "changed": {
+        "added": [],
+        "removed": [],
+        "modified": []
+      },
+      "finalText": "## Review of `feature` against `main`\n\nOne file changed: `src/features/search/index.ts`, in the search capability. The head scan covered 100% and the base scan covered 100%.\n\n**Scan delta:** 1 new finding, 0 resolved. Not checked: only static imports, re-exports, and literal `import()`/`require()` are read. Framework template references and computed paths are not.\n\n### Findings\n\n**1. blocking: deep import into cart internals**\n- Evidence: `src/features/search/index.ts:1` has `import { price } from '@/features/cart/internal/price'`. The cart public entry `src/features/cart/index.ts:1` exports only `addItem`. `price` lives in `cart/internal/price.ts:2` and wraps `total` from `cart/model.ts`.\n- Why it matters: search now depends on cart's private pricing rule, including the 1.2 multiplier. A cart change to `internal/` or `model.ts` can break search, and the scanner reports the edge as an error. The `@/` alias hides the boundary crossing.\n- Smallest repair: have cart export a pricing function, for example `export { price } from \"./internal/price\"` in `cart/index.ts`. Then import it as `from \"../cart\"`. If search needs a checkout total, use `checkoutTotal` from the checkout entry.\n\n**2. blocking: the commit drops `quickBuy` and the cart and checkout edges**\n- Evidence: the diff deletes `quickBuy`, which called `addItem` from `../cart` and `checkoutTotal` from `../checkout`, and replaces it with `export const s = price(1)`. A grep finds no remaining references to `quickBuy` or `features/search` in `src`, so nothing in the repo breaks at compile time. I did not check external consumers or tests.\n- Why it matters: this removes a public export, which is a behaviour change nobody asked for. The commit message \"search uses cart internals\" does not mention it. Search no longer adds items or computes a checkout total. The replacement is a one-item price with a hardcoded argument of `1`.\n- Smallest repair: restore `quickBuy`, or state in the commit message that removing it is intended. Do not fold that removal into a boundary change.\n\n**3. should-fix: unclear export name and hardcoded value**\n- Evidence: `search/index.ts:2` exports `s`, which is a meaningless name. It also evaluates `price(1)` at module load, which adds a side-effecting computation to search's public entry.\n- Repair: give the export a real name and make it a function that takes its input.\n\n**4. nit: inconsistent import style**\n- Evidence: the changed file uses a single-quoted `@/` alias import. Other imports in the repo use relative paths with double quotes, for example `cart/index.ts:1`.\n\n### Checklist\n- **State owner:** no new state.\n- **Import direction:** fails (finding 1). The edge goes from search into cart's private module instead of its public entry.\n- **`shared/` promotion:** not applicable.\n- **Network edge:** none added, so no edge note is needed.\n- **Contracts and errors:** not touched.\n- **Server-only code:** not touched.\n- **Accessibility, i18n, error boundary:** no UI changed.\n- **Tests:** none added or changed. The removed `quickBuy` and the new import edge have no test.\n\n### Not checked\n- I did not run the typecheck, build, or tests.\n- I did not read `src/features/cart/model.ts`, `src/features/cart/cart.api.ts`, `src/features/checkout/index.ts`, or `src/shared/ui/CartBadge.tsx`.\n- I did not check external consumers of search.\n- I did not check whether the `@/` alias is defined in `tsconfig.json`. If it is not, the new import in `search/index.ts` fails to resolve.\n\nThe worktree is unchanged.",
+      "workdir": "<tmp>"
+    },
+    {
+      "case": "decide-one-way-door",
+      "skill": "fe-decide",
+      "scenario": "existing",
+      "kind": "advisory",
+      "trial": 1,
+      "model": "sonnet",
+      "cliVersion": "2.1.323 (Claude Code)",
+      "date": "2026-11-14T09:29:15.784Z",
+      "seconds": 23,
+      "cost": 0.1614529,
+      "turns": 5,
+      "agentError": false,
+      "skillsSeen": [
+        "fe-architecture"
+      ],
+      "checks": [
+        {
+          "type": "skill-used",
+          "pass": false,
+          "detail": "skills seen: fe-architecture"
+        },
+        {
+          "type": "no-files-changed",
+          "pass": true,
+          "detail": ""
+        },
+        {
+          "type": "output-matches",
+          "pass": true,
+          "detail": "tripwire"
+        },
+        {
+          "type": "output-matches",
+          "pass": true,
+          "detail": "revers|migration cost|one-way"
+        }
+      ],
+      "passed": 3,
+      "total": 4,
+      "changed": {
+        "added": [],
+        "removed": [],
+        "modified": []
+      },
+      "finalText": "**Recommendation: don't migrate the whole SPA to Next.js. Give the marketing pages static or prerendered HTML and keep the SPA for the app.** This is advisory only. I haven't opened the repo, so every fact below is `assumed` and no files were written.\n\n## 1. Reversibility\nThis is a **one-way door**. Moving to Next.js changes the rendering strategy, routing, data-fetching, auth and session handling, and hosting runtime for every route. Undoing it means redoing all of those. The migration cost is the verdict, not the word \"architecture\".\n\n## 2. Problem and constraints\n- **Problem (known):** marketing pages need indexable HTML. A client-rendered SPA gives crawlers an empty shell and gives link previews no per-page meta tags.\n- **Constraints (all assumed):** a small team of 2-4 React engineers, with no hard deadline.\n  - The app routes are authenticated, with no SEO need and no offline mode.\n  - Marketing is about 5-20 pages that change at deploy time or through a CMS.\n  - The SPA is currently hosted as static files with rewrites.\n\n## 3. Options\n- **A. Keep the SPA and make only the marketing routes static or prerendered.** Either prerender at build time, or serve a separate static marketing site on the same domain.\n- **B. Migrate the whole app to Next.js.**\n- **C. Defer and rely on Google rendering the JavaScript.** This fails the gate if social previews or ranking matter.\n\n## 4. Scores (1 = poor, 3 = strong)\n\n| Criterion | A: static marketing, SPA stays | B: full Next.js | C: defer |\n|---|---|---|---|\n| Fit | 3 — static HTML solves the stated problem | 3 — covers it, plus unneeded SSR | 1 — fails the SEO gate if the requirement is hard (assumed) |\n| Cost | 3 — est. 2-5 team-days (assumed) | 1 — est. 15-40 team-days for routing, data, auth and hosting (assumed) | 3 — none now |\n| Reversibility | 3 — additive, and marketing can move to Next.js later | 1 — expensive exit | 3 — nothing committed |\n| Coupling | 3 — the app stays framework-neutral | 1 — adds a server runtime and Next conventions | 3 — none |\n| Failure mode | 2 — a second build to keep in sync, and style drift | 2 — the Next layer grows into a second backend | 1 — pages go unindexed |\n| Team fit | 3 — existing stack | 2 — new runtime to operate | 3 — no change |\n\n- **Gate:** C fails if SEO is a hard requirement, so it is out.\n- **A over B:** A meets the requirement at a fraction of B's cost, and unlike B it can be undone cheaply.\n\n## 5. Failure mode, tripwire and flip conditions\n- **Failure mode:**\n  - At 10x scale, the marketing build and the app build drift apart in design tokens and navigation.\n  - Content editors may need preview or fast publishing that static builds don't give them.\n- **Tripwires:** revisit this if any of these happens.\n  - Marketing grows past about 50 pages, or has more than one editor.\n  - It needs per-request personalization or ISR-style freshness.\n  - Duplicated header, footer or token code needs changes in both builds more than twice a quarter.\n- **Assumptions that flip the decision:**\n  - If marketing and app routes are interleaved, for example logged-in users see SEO-relevant public content on the same URLs, move to B, or to Next.js for marketing only.\n  - If marketing is CMS-driven with bounded staleness, use Next.js with ISR for the marketing site alone, not the app.\n  - If the app already has public, indexable data routes such as listings or profiles, B becomes the likely answer.\n- **Tradeoff note:**\n  - *Solves:* indexable HTML for marketing.\n  - *Costs:* a second build target and a shared-token discipline.\n  - *Not when:* SEO-relevant content depends on app data or per-user rendering.\n  - *Misuse breaks:* marketing pages quietly import app state and ship the whole SPA bundle anyway.\n\n## 6. Decision note (`proposed`, owner has not accepted)\n```md\n# Prerender marketing routes; keep SPA for the app\nContext: Marketing pages need indexable HTML; app routes are private. All facts assumed, unverified.\nDecision: Static/prerendered marketing (same domain), Vite SPA unchanged; no Next.js migration.\nAlternatives rejected: Full Next.js migration (est. 15-40 team-days, new runtime, hard to undo); defer (fails the SEO gate).\nConsequences: Two build targets; shared design tokens; revisit if marketing >50 pages, needs ISR/personalization, or duplication recurs.\n```\n\nThis recommendation doesn't authorize any migration or build change. Before the owner accepts it, they should confirm the page count, whether a CMS is involved, and whether any public route depends on app data. Those answers decide between A, Next.js for marketing only, and B.",
+      "workdir": "<tmp>"
+    },
+    {
+      "case": "init-profile",
+      "skill": "fe-init-profile",
+      "scenario": "existing",
+      "kind": "mutating",
+      "trial": 1,
+      "model": "sonnet",
+      "cliVersion": "2.1.323 (Claude Code)",
+      "date": "2026-11-14T09:29:40.113Z",
+      "seconds": 24,
+      "cost": 0.1857184,
+      "turns": 10,
+      "agentError": false,
+      "skillsSeen": [
+        "fe-architecture"
+      ],
+      "checks": [
+        {
+          "type": "skill-used",
+          "pass": false,
+          "detail": "skills seen: fe-architecture"
+        },
+        {
+          "type": "file-exists",
+          "pass": true,
+          "detail": "docs/frontend-architecture.md"
+        },
+        {
+          "type": "changes-within",
+          "pass": true,
+          "detail": ""
+        },
+        {
+          "type": "file-contains",
+          "pass": true,
+          "detail": "docs/frontend-architecture.md"
+        }
+      ],
+      "passed": 3,
+      "total": 4,
+      "changed": {
+        "added": [
+          "docs/frontend-architecture.md"
+        ],
+        "removed": [],
+        "modified": []
+      },
+      "finalText": "I wrote the profile to `docs/frontend-architecture.md`. I did not add an `AGENTS.md` pointer, because the repo has no `AGENTS.md`. I also didn't ask you any questions, since this session is non-interactive. Everything I couldn't confirm from the repo is marked `unknown` or `assumed` in the file.\n\nThe scanner covered the whole `src` tree (all 7 internal imports resolved) and reported 3 errors, all recorded under Known debt:\n- **Deep import:** `features/checkout/index.ts` imports `features/cart/internal/price.ts` instead of going through the cart entry.\n- **Shared imports a capability:** `shared/ui/CartBadge.tsx` imports `features/cart`, which shared code shouldn't do.\n- **Import cycle:** `cart/internal/price.ts` and `cart/model.ts` import each other.\n\nThe scanner only reads static imports, so computed imports aren't checked.\n\n- **Framework:** Next ^16 and React ^19 are declared in `package.json` but not installed, and there is no `app/` or `pages/` directory. I recorded the version as declared, with routing unverified.\n- **Package manager:** I recorded it as `unknown`, because there is no lockfile.\n- **Scripts:** the `lint` and `typecheck` scripts are placeholder `echo` commands, so no boundary rules or cycle check are enforced yet. There are no test or build scripts and no CI files.\n- **Backend:** I inferred a same-origin `/api/*` backend from `cart.api.ts`, but the profile marks that as assumed and the owning service as unknown.\n\nSay if you want to fill in the backend authority, BFF, and package manager; I'd then update the profile.",
+      "workdir": "<tmp>"
+    },
+    {
+      "case": "healthy-no-restructure",
+      "skill": "fe-restructure",
+      "scenario": "healthy",
+      "kind": "mutating",
+      "trial": 1,
+      "model": "sonnet",
+      "cliVersion": "2.1.323 (Claude Code)",
+      "date": "2026-11-14T09:29:54.599Z",
+      "seconds": 14,
+      "cost": 0.1473692,
+      "turns": 6,
+      "agentError": false,
+      "skillsSeen": [
+        "fe-architecture"
+      ],
+      "checks": [
+        {
+          "type": "skill-used",
+          "pass": false,
+          "detail": "skills seen: fe-architecture"
+        },
+        {
+          "type": "no-files-changed",
+          "pass": true,
+          "detail": ""
+        },
+        {
+          "type": "output-matches",
+          "pass": true,
+          "detail": "no smell|nothing to|no (structural )?(problem|issue|violation)|healthy|already"
+        }
+      ],
+      "passed": 2,
+      "total": 3,
+      "changed": {
+        "added": [],
+        "removed": [],
+        "modified": []
+      },
+      "finalText": "I made no changes. The structure is healthy, and the skill's rule is \"no smell, no refactor.\"\n\n**Baseline**\n- **Scanner:** complete. All 7 project-internal imports resolved, and it found 0 errors, 0 warnings and 0 info.\n- **Typecheck and tests:** unavailable. `package.json` has no scripts and no `tsc` or test runner. I did not install any.\n\n**Diagnosis**\n- **Capability layout:** `cart` and `search` are each one capability folder with one root-only public entry (`index.ts`).\n- **Cross-capability import:** `search` imports `CartList` through `@/features/cart` (`SearchBox.tsx`), which is the public entry and not cart's internals. `search` depends on `cart` but not the reverse, so there is no cycle.\n- **Shared code:** `shared/ui/Button` is domain-free and has two real consumers, so it is correctly in `shared/`.\n- **Ownership:** `CartItem` is owned by `cart/model.ts` and exposed only as a type.\n- **Level:** every capability is Simple or Moderate, with no firm signals that would raise it. Adding more structure would be heavier than the evidence justifies.\n\n**Findings for you to decide on** (none are structural defects, so I acted on none)\n- **Enforcement gap:** there is no import-boundary or cycle rule installed. The scanner passes today, but nothing blocks a future deep import such as `@/features/cart/model`. I can add one through `fe-enforce` if you want it. That is a regression guard and not a restructure.\n- **Weak cross-capability link:** `SearchBox` renders `<CartList items={[]} />`, which looks like placeholder coupling. If search doesn't need cart, removing that import is a behavior change and belongs in a separate feature step.\n- **Missing project facts:** there's no profile (`docs/frontend-architecture.md`), no typecheck script and no tests.\n\nIf you meant a specific problem, such as a cycle, a growing `utils`, or duplicated state, name it and I'll diagnose that.",
+      "workdir": "<tmp>"
+    },
+    {
+      "case": "legacy-partial-coverage",
+      "skill": "fe-check-structure",
+      "scenario": "legacy",
+      "kind": "readonly",
+      "trial": 1,
+      "model": "sonnet",
+      "cliVersion": "2.1.323 (Claude Code)",
+      "date": "2026-11-14T09:30:16.044Z",
+      "seconds": 21,
+      "cost": 0.16471760000000002,
+      "turns": 7,
+      "agentError": false,
+      "skillsSeen": [
+        "fe-architecture"
+      ],
+      "checks": [
+        {
+          "type": "skill-used",
+          "pass": false,
+          "detail": "skills seen: fe-architecture"
+        },
+        {
+          "type": "no-files-changed",
+          "pass": true,
+          "detail": ""
+        },
+        {
+          "type": "output-matches",
+          "pass": true,
+          "detail": "partial|incomplete|unresolved"
+        }
+      ],
+      "passed": 2,
+      "total": 3,
+      "changed": {
+        "added": [],
+        "removed": [],
+        "modified": []
+      },
+      "finalText": "## Structure check: legacy-partial (`src`)\n\n**Capabilities:** `orders`: Simple (1 workflow, a single read, 2 files, local rendering only). Evidence comes from reading `src/features/orders/Orders.tsx`. The level is based on that one file.\n\n**Scan:** 1 error / 0 warn / 0 info, baselined: 0. **Coverage: partial.** 2 of 4 project-internal imports resolved, so 2 did not. The top unresolved prefix is `@/legacy` (x2). No tsconfig or jsconfig defines an `@/` alias.\n\n**Locate:**\n- There is no profile, `AGENTS.md`, decision register or `fe-scan.config.json`.\n- Source root `src` is verified.\n- The framework is `assumed` to be React with no router. `package.json` lists only `react`, and `src/pages/Home.tsx` is a plain component.\n- The capabilities directory `features/` is verified. The scanner found it.\n\n**Pass (within the checked scope):**\n- No violations in the checked scope beyond the one listed below. This is not a full Pass, because the scan is partial.\n- No import cycles were detected among the resolved edges.\n\n**Fail (ranked):**\n1. **Cross-capability deep import** | evidence: `src/pages/Home.tsx:1` imports `../features/orders/Orders`, bypassing the public entry at `src/features/orders/index.ts:1`, which already exports `Orders`. I opened both files and confirmed it. | smallest repair: change the import to `../features/orders`. | cost / not-when: one line. Don't do it if the profile documents `pages/` as an allowed deep-import consumer (none is documented).\n2. **Unresolved `@/legacy/*` dependency (the coverage gap)** | evidence: `src/features/orders/Orders.tsx:1` (`@/legacy/http/client`) and `:2` (`@/legacy/util/format`). There is no `@/` alias in any config, and no `src/legacy` directory exists in the scanned tree. | smallest repair: add the `@/*` alias to tsconfig, or pass `fe-scan.config.json` if the alias lives in the build tool. Then re-scan. If `legacy/` sits outside `src`, scan that root too. | cost / not-when: a config-only change. It is not a boundary violation yet. It is unknown, because `orders` may depend on legacy-owned code, which would be an ownership question for `fe-decide`.\n3. **Ownership debt: `orders` fetches through a legacy client and legacy utility** | evidence: `Orders.tsx:4` calls `api(\"/orders\")` and passes the result straight to `fmt(...)`. | smallest repair: once `@/legacy` resolves, decide whether `orders` owns its own read or `legacy/http` stays the data owner. Record that decision. | cost / not-when: don't move code before the alias resolves, because the target can't be verified.\n\n**Manual items:**\n- **Public entries mixing client and server exports:** none. The entry has one export.\n- **State copied between server data, store and URL:** none visible.\n- **Duplicated domain rules:** none visible.\n- **Edge note missing:** yes. `api(\"/orders\")` is a network read, and `Orders.tsx` has no loading, empty, error or retry handling and no documented owner or key. It also looks like `api()` is called synchronously during render, so I can't tell whether it returns a promise. That is unverified, because the client is unresolved.\n- **Components importing 3+ capabilities:** none.\n- **Existing enforcement:** none. There is no lint rule, CI step or import boundary config, so the deep import in finding 1 is not blocked anywhere.\n\n**Not checked:**\n- Everything behind `@/legacy` (the scanner shows 2 unresolved imports).\n- The scanner's own NOT CHECKED item: it reads only static imports, re-exports and literal `import()`/`require()`. It does not read framework template references or runtime-computed paths.\n- Whether `legacy/` exists elsewhere in the repo and whether it imports back into `features/`. A cycle through it can't be ruled out.\n- Public-entry convention and generated code to ignore. No profile documents either.\n- I did not check the build, typecheck or runtime behavior.\n\nNext: `fe-init-profile` (record the alias, framework and public-entry convention) → re-scan | `fe-restructure` src/pages/Home.tsx (finding 1) | `fe-enforce` (add an import rule) | `fe-decide` legacy-http-ownership",
+      "workdir": "<tmp>"
+    },
+    {
+      "case": "laravel-inertia-placement",
+      "skill": "fe-architecture",
+      "scenario": "existing",
+      "kind": "advisory",
+      "trial": 1,
+      "model": "sonnet",
+      "cliVersion": "2.1.323 (Claude Code)",
+      "date": "2026-11-14T09:30:33.958Z",
+      "seconds": 18,
+      "cost": 0.1462009,
+      "turns": 8,
+      "agentError": false,
+      "skillsSeen": [
+        "fe-architecture"
+      ],
+      "checks": [
+        {
+          "type": "no-files-changed",
+          "pass": true,
+          "detail": ""
+        },
+        {
+          "type": "output-matches",
+          "pass": true,
+          "detail": "Pages"
+        },
+        {
+          "type": "output-matches",
+          "pass": true,
+          "detail": "props|controller|query"
+        }
+      ],
+      "passed": 3,
+      "total": 3,
+      "changed": {
+        "added": [],
+        "removed": [],
+        "modified": []
+      },
+      "finalText": "**Owner:** the Orders capability. It has no existing owner for filters. `Pages/Orders/Index.jsx` is a thin page that imports `Components/Orders/Row`.\n\n**Placement:** `resources/js/features/orders/` `(proposed)`, with these pieces:\n- `features/orders/index.js` `(proposed)` is the single public entry.\n- `features/orders/components/OrdersFilterPanel.jsx` `(proposed)` is the panel. Its draft state is `useForm` or local state.\n- `features/orders/hooks/useOrdersFilters.js` `(proposed)` reads and commits filters.\n- `Pages/Orders/Index.jsx` stays route glue. It imports from `@/features/orders` and passes the controller's `filters` prop to the panel.\n\n**Level:** Moderate. The evidence is server data plus local draft UI, and reuse across routes (\"reusable\"). I see no firm Complex signals, so the lower level is the reversible choice. The tripwire is to promote to Complex if a second integration or a reported regression appears.\n\n**State ownership (this is what makes filters survive reload):**\n- **Committed filters:** the URL query string owns them. The controller reads them from the request, applies them, and echoes `filters` back as page props. The panel never copies them into a store.\n- **Commit:** `router.get(route, filters, { preserveState: true, replace: true, only: ['orders', 'filters'] })`. Reload, back/forward and shared links then work for free.\n- **Draft:** the panel's `useForm` or local state initialises from the `filters` prop. It has explicit Apply and Reset actions, and it is never a second authority.\n\n**Reusability:** the panel stays domain-light. It takes `filters`, `onCommit` and option props, so a second route can reuse it. Keep it in `features/orders/` until a second real consumer exists outside Orders. `Components/` is the wrong home because it must stay domain-free and never import `features/`. Don't promote anything to `shared/` yet.\n\n**Existing wrinkle:** `Pages/Orders/Index.jsx` imports `fmt` from `@/Pages/Invoices/helpers`. That is a cross-capability import into another page's internals. I'd flag it. If both Orders and Invoices need it, move it to domain-free `shared/` (`resources/js/shared/`) or give it a public entry. Don't copy it.\n\n**Dependency edges:**\n- `Pages/Orders` → `features/orders` is allowed because composition layers coordinate capabilities.\n- `features/orders` → `Components/` (domain-free UI) is allowed.\n- Nothing imports the reverse way.\n\n**Edge note:**\n- **Operation:** a `GET /orders?…` partial reload.\n- **Owner and key:** the URL query string.\n- **Freshness:** every commit refetches.\n- **Failure:** Inertia's error and loading states apply. Keep the draft on failure.\n- **Duplicate-write guard:** none needed, since it is read-only. Debounce text inputs, or commit only on Apply.\n\n**Tradeoff note:**\n- **Solves:** a single URL authority, so filters survive reload.\n- **Costs:** one extra folder and entry file.\n- **Not when:** filters are purely ephemeral.\n- **Misuse breaks:** mirroring `filters` into state causes drift on back/forward.\n\n**Enforcement gap:** there is no `features/` directory yet, so the scanner skips boundary rules (`no-capability-dir`). `jsconfig.json` already mirrors `@`. Run `fe-scan.mjs resources/js` after creating `features/`.\n\n**Verified:** not run, advisory task. I opened `Pages/Orders/Index.jsx`, `Components/Orders/Row.jsx`, `jsconfig.json` and the Laravel/Inertia reference. I did not inspect the PHP controller, so whether it already returns a `filters` prop is `assumed`.",
+      "workdir": "<tmp>"
+    }
+  ]
+}

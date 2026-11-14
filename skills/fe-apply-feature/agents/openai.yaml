@@ -1,0 +1,3 @@
+# Codex: keep this workflow explicit-only (invoke with $fe-apply-feature). Placement and key per the Codex skills docs.
+policy:
+  allow_implicit_invocation: false

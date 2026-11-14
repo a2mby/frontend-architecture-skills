@@ -1,10 +1,10 @@
 ---
 name: fe-decide
-description: Decide a costly frontend choice (framework, rendering mode, state or data library, auth model, API contract, package split) and write the decision record. Usage - /fe-decide <decision>
+description: Decide a costly frontend choice (framework, rendering mode, state or data library, auth model, API contract, package split) and write the decision record. Takes the decision as its argument.
 disable-model-invocation: true
 ---
 
-Run the one-way-door procedure for the decision (`$ARGUMENTS`). Load the `fe-architecture` skill, then [decisions](../fe-architecture/references/decision-making.md). For Next.js versus SPA or rendering mode, also read [minimal surface](../fe-architecture/references/nextjs-minimal-surface.md); for a network or non-functional choice, [system design](../fe-architecture/references/system-design.md).
+Run the one-way-door procedure for the decision (the user's argument, `$ARGUMENTS`; if empty, ask which decision). Load the `fe-architecture` skill, then [decisions](../fe-architecture/references/decision-making.md). For Next.js versus SPA or rendering mode, also read [minimal surface](../fe-architecture/references/nextjs-minimal-surface.md); for a network or non-functional choice, [system design](../fe-architecture/references/system-design.md).
 
 ## Steps
 

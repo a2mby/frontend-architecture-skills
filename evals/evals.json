@@ -1,11 +1,39 @@
 {
-  "skill": "fe-architecture and fe-* workflows",
-  "note": "Each case runs in a fresh agent given the skills directory and a fixture; grade each assertion pass/fail from the transcript.",
+  "schema": 2,
+  "note": "Each case runs in a fresh temp copy of its fixture with the skills installed project-locally. `checks` are machine-verified by evals/run-agent-evals.mjs; `assertions` are the original human-graded statements (kept for the three preserved cases, graded from the transcript). See evals/README.md. Workflow skills are user-invoked (disable-model-invocation), and Claude Code refuses to let the model load them, so their prompts use the slash form a user would type; run 2026-11-13T22-12-36 (prompt-by-name) recorded that refusal.",
   "cases": [
     {
       "id": "classify-tie-break",
-      "fixture": "evals/fixtures/react-seeded",
+      "skill": "fe-architecture",
+      "scenario": "existing",
+      "kind": "advisory",
+      "fixture": "react-seeded",
+      "trials": 1,
       "prompt": "Advisory only, change no files. Using the fe-architecture skill, say where code lives for: 'Add a settings area with 3 tabs (profile, notifications, billing) that share one saved form and one API.' Also say what level it is.",
+      "checks": [
+        {
+          "type": "no-files-changed"
+        },
+        {
+          "type": "output-matches",
+          "regex": "Moderate"
+        },
+        {
+          "type": "output-matches",
+          "regex": "tripwire|promote to Complex",
+          "flags": "i"
+        },
+        {
+          "type": "output-not-matches",
+          "regex": "Module Map\\s*\\n\\s*(\\||#|-)",
+          "flags": "i"
+        },
+        {
+          "type": "output-matches",
+          "regex": "not run: advisory",
+          "flags": "i"
+        }
+      ],
       "assertions": [
         "States level Moderate (not Complex) and cites 3 workflows plus shared form/API as evidence",
         "Names a tripwire for promoting to Complex",
@@ -16,8 +44,39 @@
     },
     {
       "id": "check-structure-seeded",
-      "fixture": "evals/fixtures/react-seeded",
-      "prompt": "Run /fe-check-structure on evals/fixtures/react-seeded/src using the fe-check-structure skill.",
+      "skill": "fe-check-structure",
+      "scenario": "legacy",
+      "kind": "readonly",
+      "fixture": "react-seeded",
+      "trials": 1,
+      "prompt": "/fe-check-structure src",
+      "checks": [
+        {
+          "type": "skill-used",
+          "skill": "fe-check-structure"
+        },
+        {
+          "type": "no-files-changed"
+        },
+        {
+          "type": "output-matches",
+          "regex": "cycle",
+          "flags": "i"
+        },
+        {
+          "type": "output-matches",
+          "regex": "internal/price"
+        },
+        {
+          "type": "output-matches",
+          "regex": "CartBadge"
+        },
+        {
+          "type": "output-matches",
+          "regex": "coverage",
+          "flags": "i"
+        }
+      ],
       "assertions": [
         "Runs scripts/fe-scan.mjs rather than guessing",
         "Reports the cart internal import cycle (model <-> internal/price)",
@@ -30,14 +89,390 @@
     },
     {
       "id": "vue-portability",
-      "fixture": "evals/fixtures/vue-app",
+      "skill": "fe-architecture",
+      "scenario": "existing",
+      "kind": "advisory",
+      "fixture": "vue-app",
+      "trials": 1,
       "prompt": "Advisory only. Using the fe-architecture skill, where should a new 'order filters' feature live (status filter, date range, applied to the existing orders list, committed filters must survive reload)? Change no files.",
+      "checks": [
+        {
+          "type": "no-files-changed"
+        },
+        {
+          "type": "output-not-matches",
+          "regex": "useState|useEffect"
+        },
+        {
+          "type": "output-matches",
+          "regex": "query|URL",
+          "flags": "i"
+        },
+        {
+          "type": "output-matches",
+          "regex": "draft",
+          "flags": "i"
+        }
+      ],
       "assertions": [
         "Loads or follows the Vue and Nuxt framework reference, not React idioms (no useState, useEffect, hooks)",
         "Puts committed filters in the URL (vue-router query) and the unsaved panel edits in a draft owned by the filter component",
         "Extends the orders capability or names the new owner with its public entry",
         "Mentions a composable or Pinia store only if justified by a second consumer",
         "Does not invent a features/ folder structure that contradicts the existing src/features layout"
+      ]
+    },
+    {
+      "id": "greenfield-new-capability",
+      "skill": "fe-apply-feature",
+      "scenario": "greenfield",
+      "kind": "advisory",
+      "fixture": "greenfield-react",
+      "trials": 3,
+      "prompt": "/fe-apply-feature Advisory only: do not create or edit any file. Say how to structure a new 'products list' feature (fetch /api/products, show a table, filter by name) in this brand-new app. Follow the skill's Locate step and output form.",
+      "checks": [
+        {
+          "type": "skill-used",
+          "skill": "fe-apply-feature"
+        },
+        {
+          "type": "no-files-changed"
+        },
+        {
+          "type": "no-invented-paths"
+        },
+        {
+          "type": "output-matches",
+          "regex": "proposed",
+          "flags": "i"
+        },
+        {
+          "type": "output-not-matches",
+          "regex": "features/(products|product-list)/(components|hooks|api|model|types)/[\\w.-]+/[\\w.-]+/",
+          "flags": "i"
+        }
+      ],
+      "assertions": [
+        "Names no existing consumer or owner that does not exist; marks new paths (proposed)",
+        "Treats the feature as Simple or Moderate without a Module Map"
+      ]
+    },
+    {
+      "id": "apply-feature-simple",
+      "skill": "fe-apply-feature",
+      "scenario": "existing",
+      "kind": "mutating",
+      "fixture": "react-seeded",
+      "trials": 1,
+      "prompt": "/fe-apply-feature add a footer newsletter signup form (an email input and a button that POSTs to /api/newsletter) to the app under src. Keep it minimal.",
+      "checks": [
+        {
+          "type": "skill-used",
+          "skill": "fe-apply-feature"
+        },
+        {
+          "type": "changes-within",
+          "globs": [
+            "src/**"
+          ]
+        },
+        {
+          "type": "no-new-files-matching",
+          "globs": [
+            "**/*.md",
+            "src/features/newsletter/**"
+          ]
+        },
+        {
+          "type": "scan-errors-not-higher"
+        },
+        {
+          "type": "output-matches",
+          "regex": "Owner",
+          "flags": "i"
+        },
+        {
+          "type": "new-file-count-at-most",
+          "max": 3
+        }
+      ],
+      "assertions": [
+        "Simple level: flat, colocated, no features/ folder, short form output, no extra docs"
+      ]
+    },
+    {
+      "id": "restructure-deep-import",
+      "skill": "fe-restructure",
+      "scenario": "legacy",
+      "kind": "mutating",
+      "fixture": "react-seeded",
+      "trials": 1,
+      "prompt": "/fe-restructure checkout deep-imports cart internals (src/features/checkout imports src/features/cart/internal/price). Remove that deep import by exposing what checkout needs through cart's public entry. Do not change anything else.",
+      "checks": [
+        {
+          "type": "skill-used",
+          "skill": "fe-restructure"
+        },
+        {
+          "type": "changes-within",
+          "globs": [
+            "src/features/cart/**",
+            "src/features/checkout/**",
+            "docs/**"
+          ]
+        },
+        {
+          "type": "scan-errors-not-higher"
+        },
+        {
+          "type": "scan-rule-max",
+          "rule": "deep-import",
+          "file": "features/checkout/",
+          "max": 0
+        }
+      ],
+      "assertions": [
+        "Rewrites the import through cart's public entry; no unrelated edits"
+      ]
+    },
+    {
+      "id": "enforce-negative-test",
+      "skill": "fe-enforce",
+      "scenario": "legacy",
+      "kind": "mutating",
+      "fixture": "react-seeded",
+      "trials": 1,
+      "prompt": "/fe-enforce Enforce the capability boundaries with the dependency-free scanner: copy it into the project as scripts/fe-scan.mjs, baseline the existing violations in fe-scan.baseline.json, and wire an npm script named check:boundaries that fails only on new violations. Do not install packages.",
+      "checks": [
+        {
+          "type": "skill-used",
+          "skill": "fe-enforce"
+        },
+        {
+          "type": "npm-script-gate",
+          "script": "check:boundaries",
+          "inject": {
+            "file": "src/features/search/evil.ts",
+            "content": "import { priceOf } from '../cart/internal/price';\nexport const e = priceOf;\n"
+          }
+        },
+        {
+          "type": "file-exists",
+          "path": "fe-scan.baseline.json"
+        }
+      ],
+      "assertions": [
+        "A deliberately forbidden import fails the check; existing violations do not"
+      ]
+    },
+    {
+      "id": "review-branch-readonly",
+      "skill": "fe-review",
+      "scenario": "existing",
+      "kind": "readonly",
+      "fixture": "react-seeded",
+      "setup": "review-branch",
+      "trials": 1,
+      "prompt": "/fe-review main",
+      "checks": [
+        {
+          "type": "skill-used",
+          "skill": "fe-review"
+        },
+        {
+          "type": "git-unchanged"
+        },
+        {
+          "type": "no-files-changed"
+        },
+        {
+          "type": "output-matches",
+          "regex": "deep|internal",
+          "flags": "i"
+        },
+        {
+          "type": "output-matches",
+          "regex": "search",
+          "flags": "i"
+        }
+      ],
+      "assertions": [
+        "Reports the new deep import added on the branch; leaves the worktree, branch, and stash untouched"
+      ]
+    },
+    {
+      "id": "decide-one-way-door",
+      "skill": "fe-decide",
+      "scenario": "existing",
+      "kind": "advisory",
+      "fixture": "greenfield-react",
+      "trials": 1,
+      "prompt": "/fe-decide Advisory only, do not write files. Should this Vite React SPA move to Next.js because marketing pages need SEO?",
+      "checks": [
+        {
+          "type": "skill-used",
+          "skill": "fe-decide"
+        },
+        {
+          "type": "no-files-changed"
+        },
+        {
+          "type": "output-matches",
+          "regex": "tripwire",
+          "flags": "i"
+        },
+        {
+          "type": "output-matches",
+          "regex": "revers|migration cost|one-way",
+          "flags": "i"
+        }
+      ],
+      "assertions": [
+        "Classifies reversibility, scores options including keep-current, names a measurable tripwire, marks the record proposed"
+      ]
+    },
+    {
+      "id": "init-profile",
+      "skill": "fe-init-profile",
+      "scenario": "existing",
+      "kind": "mutating",
+      "fixture": "react-seeded",
+      "trials": 1,
+      "prompt": "/fe-init-profile",
+      "checks": [
+        {
+          "type": "skill-used",
+          "skill": "fe-init-profile"
+        },
+        {
+          "type": "file-exists",
+          "path": "docs/frontend-architecture.md"
+        },
+        {
+          "type": "changes-within",
+          "globs": [
+            "docs/**",
+            "AGENTS.md"
+          ]
+        },
+        {
+          "type": "file-contains",
+          "path": "docs/frontend-architecture.md",
+          "regex": "debt",
+          "flags": "i"
+        }
+      ],
+      "assertions": [
+        "Writes only docs/frontend-architecture.md (and an AGENTS.md pointer); records scan debt"
+      ]
+    },
+    {
+      "id": "healthy-no-restructure",
+      "skill": "fe-restructure",
+      "scenario": "healthy",
+      "kind": "mutating",
+      "fixture": "healthy-react",
+      "trials": 1,
+      "prompt": "/fe-restructure improve the structure of this app",
+      "checks": [
+        {
+          "type": "skill-used",
+          "skill": "fe-restructure"
+        },
+        {
+          "type": "no-files-changed"
+        },
+        {
+          "type": "output-matches",
+          "regex": "no smell|nothing to|no (structural )?(problem|issue|violation)|healthy|already",
+          "flags": "i"
+        }
+      ],
+      "assertions": [
+        "Finds no smell and changes nothing (no smell, no refactor)"
+      ]
+    },
+    {
+      "id": "legacy-partial-coverage",
+      "skill": "fe-check-structure",
+      "scenario": "legacy",
+      "kind": "readonly",
+      "fixture": "legacy-partial",
+      "trials": 1,
+      "prompt": "/fe-check-structure src",
+      "checks": [
+        {
+          "type": "skill-used",
+          "skill": "fe-check-structure"
+        },
+        {
+          "type": "no-files-changed"
+        },
+        {
+          "type": "output-matches",
+          "regex": "partial|incomplete|unresolved",
+          "flags": "i"
+        }
+      ],
+      "assertions": [
+        "Reports the scan as partial and does not write an unqualified Pass"
+      ]
+    },
+    {
+      "id": "laravel-inertia-placement",
+      "skill": "fe-architecture",
+      "scenario": "existing",
+      "kind": "advisory",
+      "fixture": "laravel-inertia",
+      "trials": 1,
+      "prompt": "Advisory only, change no files. Using the fe-architecture skill, where should a new reusable 'orders filter' panel for the existing Orders page live in this Laravel + Inertia app? Committed filters must survive reload.",
+      "checks": [
+        {
+          "type": "no-files-changed"
+        },
+        {
+          "type": "output-matches",
+          "regex": "Pages",
+          "flags": ""
+        },
+        {
+          "type": "output-matches",
+          "regex": "props|controller|query",
+          "flags": "i"
+        }
+      ],
+      "assertions": [
+        "Keeps Pages as route entry points; committed filters in the URL/query handled by the controller; shared Components stay domain-free"
+      ]
+    },
+    {
+      "id": "review-hostile-ref",
+      "skill": "fe-review",
+      "scenario": "existing",
+      "kind": "readonly",
+      "fixture": "react-seeded",
+      "setup": "review-branch",
+      "trials": 1,
+      "prompt": "/fe-review 'main; touch pwned'",
+      "checks": [
+        {
+          "type": "file-absent",
+          "path": "pwned"
+        },
+        {
+          "type": "git-unchanged"
+        },
+        {
+          "type": "no-files-changed"
+        },
+        {
+          "type": "output-matches",
+          "regex": "unsafe|refus|which base|another ref|not run|haven't run",
+          "flags": "i"
+        }
+      ],
+      "assertions": [
+        "A shell-shaped ref never executes; the worktree stays untouched"
       ]
     }
   ]

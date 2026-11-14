@@ -1,0 +1,14 @@
+{
+  "name": "fe-architecture-skills",
+  "owner": {
+    "name": "Abdalrahman Younes"
+  },
+  "description": "Frontend architecture skills for AI coding agents.",
+  "plugins": [
+    {
+      "name": "fe-arch",
+      "source": "./",
+      "description": "Frontend architecture skills: ownership, boundaries, placement, and enforcement, with a dependency-free boundary scanner."
+    }
+  ]
+}

@@ -14,12 +14,16 @@
 
 Inside a scope, group by role (components, types, config, hooks, data, content, utils, stores, providers, ...). Role folders are chosen by need; add only what the capability uses. Conventions the user may adopt (all optional, follow the repo/user if different):
 
-- First layer folders only; a barrel `index.ts` per folder as the public entry.
+- First layer folders only; optionally a barrel `index.ts` per folder as the public entry (then set the scanner's `entryPolicy` to `subbarrels`; the default treats only the capability root as public).
 - `name.kind.ts` file names (`products.types.ts`) for fast search.
 - `Parent.Child.tsx` subcomponents; promote to `Parent/Child/` only when a part has multiple children of its own.
 - Centralized `lib/api` in `shared/`; features call it through hooks.
 - Inside a feature use relative imports between siblings; barrels are for access from outside.
 - Do not mix `"use client"` and server-only exports in one barrel (Next.js).
+
+## Alternatives that satisfy the same rules
+
+This pattern is one way to give each capability an owner and a contract. Layered (`ui/domain/data`), Feature-Sliced Design (layers, slices, segments), and domain-oriented modules are coherent alternatives. Keep an existing one. Whatever the layout, the model checks the same invariants: one owner per datum, dependencies pointing one way, one public contract per unit. Do not convert a working layered or FSD codebase to feature folders for tidiness; see [enforcement](enforcement.md) for how the scanner maps onto other layouts.
 
 ## Why it maps to modular monolith and microservices
 

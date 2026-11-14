@@ -1,0 +1,18 @@
+{
+  "repo": "https://github.com/alan2207/bulletproof-react",
+  "commit": "9506629ed003a561c6627735480cce4994244bb4",
+  "commitDate": "2026-05-14",
+  "sourceRoot": "apps/react-vite/src",
+  "runs": [
+    {
+      "name": "default",
+      "scannerArgs": [],
+      "expect": { "coverage": "complete", "percent": 100, "errors": 14, "warns": 0, "infos": 3, "rules": { "deep-import": 14, "no-public-entry": 3 }, "errorSourcesAllUnder": "app/" }
+    },
+    {
+      "name": "composition layer ignored",
+      "scannerArgs": ["--ignore", "app/**"],
+      "expect": { "coverage": "complete", "percent": 100, "errors": 0, "warns": 0, "infos": 3, "rules": { "no-public-entry": 3 } }
+    }
+  ]
+}

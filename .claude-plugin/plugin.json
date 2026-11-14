@@ -1,6 +1,17 @@
 {
-  "name": "frontend-architecture-skills",
-  "version": "0.1.0",
-  "description": "Frontend architecture skills: ownership, boundaries, placement, and enforcement for React, Next.js, Vue, Nuxt, Svelte, SvelteKit, and Angular.",
-  "license": "MIT"
+  "name": "fe-arch",
+  "version": "0.2.0",
+  "description": "Frontend architecture skills: ownership, boundaries, placement, and enforcement. Guidance for React, Next.js, Vue, Nuxt, Svelte, SvelteKit, Angular, and Laravel + Inertia; the bundled scanner is tested on a subset (see README).",
+  "author": {
+    "name": "Abdalrahman Younes"
+  },
+  "license": "MIT",
+  "keywords": [
+    "frontend",
+    "architecture",
+    "agent-skills",
+    "boundaries"
+  ],
+  "repository": "https://github.com/a2mby/frontend-architecture-skills",
+  "homepage": "https://github.com/a2mby/frontend-architecture-skills"
 }

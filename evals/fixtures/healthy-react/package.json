@@ -1,0 +1,1 @@
+{ "name": "healthy-react", "private": true, "type": "module", "dependencies": { "react": "^19.0.0" } }

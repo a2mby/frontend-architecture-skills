@@ -1,0 +1,13 @@
+{
+  "name": "frontend-architecture-skills",
+  "version": "0.2.0",
+  "private": true,
+  "type": "module",
+  "description": "Agent skills for frontend ownership, boundaries, and placement.",
+  "scripts": {
+    "validate": "node scripts/validate-package.mjs",
+    "test": "node --test",
+    "check": "npm run validate && npm test"
+  },
+  "engines": { "node": ">=22" }
+}

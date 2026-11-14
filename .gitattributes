@@ -1,0 +1,8 @@
+* text=auto eol=lf
+*.png binary
+
+# Not part of the release archive (git archive / GitHub source zip):
+/audit/ export-ignore
+/.github/ export-ignore
+/evals/results/ export-ignore
+/.gitattributes export-ignore

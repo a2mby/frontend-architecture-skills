@@ -1,0 +1,44 @@
+{
+  "skill": "fe-architecture and fe-* workflows",
+  "note": "Each case runs in a fresh agent given the skills directory and a fixture; grade each assertion pass/fail from the transcript.",
+  "cases": [
+    {
+      "id": "classify-tie-break",
+      "fixture": "evals/fixtures/react-seeded",
+      "prompt": "Advisory only, change no files. Using the fe-architecture skill, say where code lives for: 'Add a settings area with 3 tabs (profile, notifications, billing) that share one saved form and one API.' Also say what level it is.",
+      "assertions": [
+        "States level Moderate (not Complex) and cites 3 workflows plus shared form/API as evidence",
+        "Names a tripwire for promoting to Complex",
+        "Does not write a Module Map",
+        "Uses the Short or Full output form with Owner, Placement, Verified; Verified says not run: advisory task",
+        "Names one owner for the saved form state and treats unsaved edits as a draft"
+      ]
+    },
+    {
+      "id": "check-structure-seeded",
+      "fixture": "evals/fixtures/react-seeded",
+      "prompt": "Run /fe-check-structure on evals/fixtures/react-seeded/src using the fe-check-structure skill.",
+      "assertions": [
+        "Runs scripts/fe-scan.mjs rather than guessing",
+        "Reports the cart internal import cycle (model <-> internal/price)",
+        "Reports checkout deep-importing cart/internal/price",
+        "Reports shared/ui/CartBadge importing a capability",
+        "Reports search as the high fan-out or coordination smell only if the scan reports it, else does not invent it",
+        "Ranks cycles and deep imports above size or naming items",
+        "Modifies no files"
+      ]
+    },
+    {
+      "id": "vue-portability",
+      "fixture": "evals/fixtures/vue-app",
+      "prompt": "Advisory only. Using the fe-architecture skill, where should a new 'order filters' feature live (status filter, date range, applied to the existing orders list, committed filters must survive reload)? Change no files.",
+      "assertions": [
+        "Loads or follows the Vue and Nuxt framework reference, not React idioms (no useState, useEffect, hooks)",
+        "Puts committed filters in the URL (vue-router query) and the unsaved panel edits in a draft owned by the filter component",
+        "Extends the orders capability or names the new owner with its public entry",
+        "Mentions a composable or Pinia store only if justified by a second consumer",
+        "Does not invent a features/ folder structure that contradicts the existing src/features layout"
+      ]
+    }
+  ]
+}

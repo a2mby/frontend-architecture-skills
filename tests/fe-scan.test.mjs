@@ -4,6 +4,7 @@ import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
 import { scan } from "../skills/fe-architecture/scripts/fe-scan.mjs";
+import { canSymlink } from "./helpers.mjs";
 
 function fixture(files, tsconfig) {
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), "fe-scan-"));
@@ -176,6 +177,7 @@ test("CLI: prints output when the script path contains a space or is a symlink",
   fs.copyFileSync(SCANNER, copy);
   const viaSpace = spawnSync("node", [copy, SEEDED, "--fail-on", "never"], { encoding: "utf8" });
   assert.match(viaSpace.stdout, /summary:/, "space in path must not silence the CLI");
+  if (!canSymlink()) return; // symlink creation needs privileges on some Windows runners; the space case above still ran
   const link = path.join(dir, "linked.mjs");
   fs.symlinkSync(SCANNER, link);
   const viaLink = spawnSync("node", [link, SEEDED, "--fail-on", "never"], { encoding: "utf8" });
